@@ -9762,6 +9762,7 @@ const HELP={
 
 /* --- AUTH (local) --- */
 const AUTH_SESSION_KEY = "sgf_auth_ok_v1";
+const AUTH_PERSIST_KEY = "sgf_auth_ok_persist_v1";
 const AUTH_MIN_LEN = 4;
 
 function authGet(){
@@ -9834,12 +9835,13 @@ function authOverlayHtml(mode){
         </div>` : ``}
         <div class="form-check">
           <input class="form-check-input" type="checkbox" id="authRemember" ${isSetup?'checked':''}>
-          <label class="form-check-label" for="authRemember">Mantener sesión en esta pestaña</label>
+          <label class="form-check-label" for="authRemember">Mantener sesión en este dispositivo</label>
         </div>
         ${extra}
       </div>
       <div class="auth-msg" id="authMsg"></div>
       <div class="auth-actions">
+        <button class="btn btn-outline-danger" type="button" id="authExit"><i class="bi bi-box-arrow-right"></i> Salir</button>
         <button class="btn btn-dark" type="button" id="authOk"><i class="bi bi-shield-lock"></i> ${isSetup?'Guardar':'Entrar'}</button>
       </div>
     </div>
@@ -9859,6 +9861,8 @@ function authShow(mode){
   };
 
   const okBtn = document.getElementById("authOk");
+  const exitBtn = document.getElementById("authExit");
+  if(exitBtn) exitBtn.onclick = ()=>{ try{ authLogout(); }catch{} };
   const uEl = document.getElementById("authUser");
   const pEl = document.getElementById("authPass");
   const p2El = document.getElementById("authPass2");
@@ -9885,7 +9889,10 @@ function authShow(mode){
       const passHash = await sha256hex(`${salt}:${pass}`);
       authSet({ enabled:true, user, salt, passHash, updatedAt: new Date().toISOString() });
 
-      if(remember) sessionStorage.setItem(AUTH_SESSION_KEY,"1");
+      if(remember){
+        sessionStorage.setItem(AUTH_SESSION_KEY,"1");
+        try{ localStorage.setItem(AUTH_PERSIST_KEY, "1"); }catch{}
+      }
       say("success","Acceso guardado. Ingresando...");
       setTimeout(()=>{ document.getElementById("authOV")?.remove(); bootAfterAuth(); }, 250);
       return;
@@ -9895,7 +9902,10 @@ function authShow(mode){
     const ok = a && a.enabled && (user === a.user) && ((await sha256hex(`${a.salt}:${pass}`)) === a.passHash);
     if(!ok){ say("danger","Credenciales inválidas."); return; }
 
-    if(remember) sessionStorage.setItem(AUTH_SESSION_KEY,"1");
+    if(remember){
+        sessionStorage.setItem(AUTH_SESSION_KEY,"1");
+        try{ localStorage.setItem(AUTH_PERSIST_KEY, "1"); }catch{}
+      }
     say("success","Ingresando...");
     setTimeout(()=>{ document.getElementById("authOV")?.remove(); bootAfterAuth(); }, 200);
   };
@@ -9910,7 +9920,9 @@ function authShow(mode){
 function authGate(){
   const a = authGet();
   if(!a || !a.enabled){ authShow("setup"); return true; }
-  const ok = sessionStorage.getItem(AUTH_SESSION_KEY)==="1";
+  let ok = sessionStorage.getItem(AUTH_SESSION_KEY)==="1";
+  if(!ok){ try{ ok = localStorage.getItem(AUTH_PERSIST_KEY)==="1"; }catch{} }
+  if(ok){ try{ sessionStorage.setItem(AUTH_SESSION_KEY,"1"); }catch{} }
   if(!ok){ authShow("login"); return true; }
   return false;
 }
@@ -9918,9 +9930,11 @@ function authGate(){
 
 function authLogout(){
   try{ sessionStorage.removeItem(AUTH_SESSION_KEY); }catch{}
+  try{ localStorage.removeItem(AUTH_PERSIST_KEY); }catch{}
   try{ document.getElementById("authOV")?.remove(); }catch{}
   try{ document.getElementById("pwOV")?.remove(); }catch{}
-  try{ location.reload(); }catch{}
+  try{ authShow("login"); }catch{ try{ location.reload(); }catch{} }
+}catch{}
 }
 
 
