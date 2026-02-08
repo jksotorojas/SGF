@@ -8635,37 +8635,50 @@ async function decryptJsonObject(encObj, password){
 }
 
 function promptPassword(title, cb){
-  // simple modal via msg() with input
-  const id = "pwInp";
-  msg({
-    title,
-    kind:"info",
-    body:`
-      <div class="mb-2">Ingrese una contraseña (mínimo 8 caracteres).</div>
-      <input class="form-control" id="${id}" type="password" autocomplete="current-password" placeholder="••••••••">
-      <div class="small text-secondary mt-2">La contraseña no se guarda. Sin ella no podrás recuperar el backup.</div>
-      <div class="d-grid gap-2 mt-3">
-        <button class="btn btn-dark" id="pwOk"><i class="bi bi-check2"></i> Continuar</button>
+  try{ document.getElementById("pwOV")?.remove(); }catch{}
+  const h = `
+  <div class="auth-overlay" id="pwOV">
+    <div class="auth-card">
+      <div class="auth-head">
+        <div class="auth-title">${esc(title||"Contraseña")}</div>
+        <div class="auth-sub">Ingrese la contraseña para continuar.</div>
       </div>
-    `
-  });
-  setTimeout(()=>{
-    const inp = document.getElementById(id);
-    const ok = document.getElementById("pwOk");
-    if(inp) inp.focus();
-    if(ok){
-      ok.onclick = ()=>{
-        const pw = (inp?.value||"").trim();
-        bootstrap.Modal.getInstance(document.getElementById("msgM"))?.hide();
-        cb(pw);
-      };
-    }
-    if(inp){
-      inp.addEventListener("keydown",(ev)=>{ if(ev.key==="Enter"){ ok?.click(); }});
-    }
-  },50);
-}
+      <div class="auth-body">
+        <div>
+          <label class="form-label">Contraseña</label>
+          <input class="form-control" id="pwInp" type="password" autocomplete="current-password" placeholder="••••••••">
+          <div class="small text-secondary mt-2">La contraseña no se guarda. Si la olvidas, no podrás recuperar el backup.</div>
+        </div>
+        <div class="alert alert-danger border-0 d-none" id="pwErr" style="background:rgba(239,68,68,.10)"></div>
+      </div>
+      <div class="auth-actions">
+        <button class="btn btn-outline-dark" type="button" id="pwCancel"><i class="bi bi-x-lg"></i> Cancelar</button>
+        <button class="btn btn-dark" type="button" id="pwOk"><i class="bi bi-check2"></i> Continuar</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML("beforeend", h);
 
+  const inp = document.getElementById("pwInp");
+  const ok = document.getElementById("pwOk");
+  const cancel = document.getElementById("pwCancel");
+  const err = document.getElementById("pwErr");
+
+  const close=()=>{ try{ document.getElementById("pwOV")?.remove(); }catch{} };
+  const showErr=(t)=>{ if(err){ err.classList.remove("d-none"); err.innerHTML=t; } };
+
+  if(cancel) cancel.onclick = ()=>{ close(); };
+  if(ok) ok.onclick = ()=>{
+    const pw = (inp?.value||"").trim();
+    if(!pw){ showErr("Ingrese una contraseña."); return; }
+    close();
+    cb(pw);
+  };
+  if(inp){
+    setTimeout(()=>inp.focus(),50);
+    inp.addEventListener("keydown",(ev)=>{ if(ev.key==="Enter"){ ok?.click(); }});
+  }
+}
 function importJson(mode="replace"){
   const f=$("#impF").files?.[0];
   if(!f){msg({title:"Importar",kind:"warning",body:"Seleccione un JSON."});return}
@@ -8673,7 +8686,8 @@ function importJson(mode="replace"){
     try{
       const d=JSON.parse(String(r.result||"{}"));
       // Soporte JSON cifrado
-      if(d && d.tag===SGF_ENC_TAG){
+      const isEnc = !!(d && (d.tag===SGF_ENC_TAG || (d.kdf && d.alg && d.data) || d?.meta?.encrypted));
+      if(isEnc){
         promptPassword('Desencriptar backup', async (pw)=>{
           try{
             const plain = await decryptJsonObject(d, pw);
