@@ -1188,6 +1188,7 @@ function backupRestoreOk(ts){
     toast("Backup restaurado.","success");
     render(state.ui.route);
 
+  try{ uiUnblock(); }catch{}
   // Auth UI
   try{
     const a = authGet();
@@ -9931,10 +9932,20 @@ function authGate(){
 function authLogout(){
   try{ sessionStorage.removeItem(AUTH_SESSION_KEY); }catch{}
   try{ localStorage.removeItem(AUTH_PERSIST_KEY); }catch{}
-  try{ document.getElementById("authOV")?.remove(); }catch{}
-  try{ document.getElementById("pwOV")?.remove(); }catch{}
+  try{ uiUnblock(); }catch{}
   try{ authShow("login"); }catch{ try{ location.reload(); }catch{} }
 }
+
+
+function uiUnblock(){
+  // Quita overlays/backdrops que bloquean clics
+  try{ document.getElementById("authOV")?.remove(); }catch{}
+  try{ document.getElementById("pwOV")?.remove(); }catch{}
+  try{ document.querySelectorAll(".modal-backdrop").forEach(x=>x.remove()); }catch{}
+  try{ document.body.classList.remove("modal-open"); }catch{}
+  try{ document.body.style.overflow=""; }catch{}
+}
+
 
 
 function bootAfterAuth(){ /* asignado por boot() */ }
