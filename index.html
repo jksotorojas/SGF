@@ -9814,7 +9814,17 @@ function boot(){
 
 function bootCore(){
   buildNav();loadCollapsed();
-  const ok=load(); if(!ok){ensureSavingsAccount();save();}
+  const ok=load();
+  if(!ok){
+    // Primera ejecución: solo inicializa si NO hay datos guardados
+    try{ loadDefaults(); }catch{}
+    ensureSavingsAccount();
+    save();
+  }else{
+    // Con datos existentes: solo asegurar integridad
+    ensureSavingsAccount();
+    save();
+  }
   applyTheme(state.config?.theme);
   applyNavLayout(state.config?.navLayout);
   // start collapsed by default
