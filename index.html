@@ -9763,7 +9763,6 @@ const HELP={
 
 /* --- AUTH (local) --- */
 const AUTH_SESSION_KEY = "sgf_auth_ok_v1";
-const AUTH_PERSIST_KEY = "sgf_auth_ok_persist_v1";
 const AUTH_MIN_LEN = 4;
 
 function authGet(){
@@ -9836,7 +9835,7 @@ function authOverlayHtml(mode){
         </div>` : ``}
         <div class="form-check">
           <input class="form-check-input" type="checkbox" id="authRemember" ${isSetup?'checked':''}>
-          <label class="form-check-label" for="authRemember">Mantener sesión en este dispositivo</label>
+          <label class="form-check-label" for="authRemember">Mantener sesión en esta pestaña</label>
         </div>
         ${extra}
       </div>
@@ -9892,9 +9891,8 @@ function authShow(mode){
 
       if(remember){
         sessionStorage.setItem(AUTH_SESSION_KEY,"1");
-        try{ localStorage.setItem(AUTH_PERSIST_KEY, "1"); }catch{}
       }
-      say("success","Acceso guardado. Ingresando...");
+say("success","Acceso guardado. Ingresando...");
       setTimeout(()=>{ document.getElementById("authOV")?.remove(); bootAfterAuth(); }, 250);
       return;
     }
@@ -9905,9 +9903,8 @@ function authShow(mode){
 
     if(remember){
         sessionStorage.setItem(AUTH_SESSION_KEY,"1");
-        try{ localStorage.setItem(AUTH_PERSIST_KEY, "1"); }catch{}
       }
-    say("success","Ingresando...");
+say("success","Ingresando...");
     setTimeout(()=>{ document.getElementById("authOV")?.remove(); bootAfterAuth(); }, 200);
   };
 
@@ -9921,9 +9918,7 @@ function authShow(mode){
 function authGate(){
   const a = authGet();
   if(!a || !a.enabled){ authShow("setup"); return true; }
-  let ok = sessionStorage.getItem(AUTH_SESSION_KEY)==="1";
-  if(!ok){ try{ ok = localStorage.getItem(AUTH_PERSIST_KEY)==="1"; }catch{} }
-  if(ok){ try{ sessionStorage.setItem(AUTH_SESSION_KEY,"1"); }catch{} }
+  const ok = sessionStorage.getItem(AUTH_SESSION_KEY)==="1";
   if(!ok){ authShow("login"); return true; }
   return false;
 }
@@ -9931,8 +9926,7 @@ function authGate(){
 
 function authLogout(){
   try{ sessionStorage.removeItem(AUTH_SESSION_KEY); }catch{}
-  try{ localStorage.removeItem(AUTH_PERSIST_KEY); }catch{}
-  try{ uiUnblock(); }catch{}
+try{ uiUnblock(); }catch{}
   try{ authShow("login"); }catch{ try{ location.reload(); }catch{} }
 }
 
