@@ -8578,14 +8578,117 @@ function showImportReport(rep){
   }catch{}
 }
 
+
+/* --- JSON cifrado (AES-GCM + PBKDF2) --- */
+const SGF_ENC_TAG = "SGF_ENCRYPTED_V1";
+function b64enc(bytes){
+  let bin=""; const arr = (bytes instanceof Uint8Array) ? bytes : new Uint8Array(bytes);
+  for(let i=0;i<arr.length;i++) bin += String.fromCharCode(arr[i]);
+  return btoa(bin);
+}
+function b64dec(b64){
+  const bin = atob(String(b64||""));
+  const out = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+async function deriveAesKey(password, saltBytes, iterations=210000){
+  const enc = new TextEncoder();
+  const baseKey = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    {name:"PBKDF2", salt:saltBytes, iterations, hash:"SHA-256"},
+    baseKey,
+    {name:"AES-GCM", length:256},
+    false,
+    ["encrypt","decrypt"]
+  );
+}
+async function encryptJsonObject(obj, password){
+  if(!password || String(password).length < 8) throw new Error("Contraseña muy corta (mínimo 8).");
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const iterations = 210000;
+  const key = await deriveAesKey(String(password), salt, iterations);
+
+  const plaintext = new TextEncoder().encode(JSON.stringify(obj));
+  const ct = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, plaintext);
+
+  return {
+    tag: SGF_ENC_TAG,
+    meta: { app:"SGF", version: (typeof APP_VERSION!=="undefined" && APP_VERSION)?APP_VERSION:"v1.0", exportedAt:new Date().toISOString(), encrypted:true },
+    kdf: { name:"PBKDF2", hash:"SHA-256", iterations, salt: b64enc(salt) },
+    alg: { name:"AES-GCM", iv: b64enc(iv) },
+    data: b64enc(new Uint8Array(ct))
+  };
+}
+async function decryptJsonObject(encObj, password){
+  if(!encObj || encObj.tag !== SGF_ENC_TAG) throw new Error("Formato cifrado inválido.");
+  if(!password) throw new Error("Contraseña requerida.");
+  const salt = b64dec(encObj.kdf?.salt);
+  const iv = b64dec(encObj.alg?.iv);
+  const iterations = Number(encObj.kdf?.iterations)||210000;
+  const key = await deriveAesKey(String(password), salt, iterations);
+  const ct = b64dec(encObj.data);
+  const pt = await crypto.subtle.decrypt({name:"AES-GCM", iv}, key, ct);
+  const json = new TextDecoder().decode(pt);
+  return JSON.parse(json);
+}
+
+function promptPassword(title, cb){
+  // simple modal via msg() with input
+  const id = "pwInp";
+  msg({
+    title,
+    kind:"info",
+    body:`
+      <div class="mb-2">Ingrese una contraseña (mínimo 8 caracteres).</div>
+      <input class="form-control" id="${id}" type="password" autocomplete="current-password" placeholder="••••••••">
+      <div class="small text-secondary mt-2">La contraseña no se guarda. Sin ella no podrás recuperar el backup.</div>
+      <div class="d-grid gap-2 mt-3">
+        <button class="btn btn-dark" id="pwOk"><i class="bi bi-check2"></i> Continuar</button>
+      </div>
+    `
+  });
+  setTimeout(()=>{
+    const inp = document.getElementById(id);
+    const ok = document.getElementById("pwOk");
+    if(inp) inp.focus();
+    if(ok){
+      ok.onclick = ()=>{
+        const pw = (inp?.value||"").trim();
+        bootstrap.Modal.getInstance(document.getElementById("msgM"))?.hide();
+        cb(pw);
+      };
+    }
+    if(inp){
+      inp.addEventListener("keydown",(ev)=>{ if(ev.key==="Enter"){ ok?.click(); }});
+    }
+  },50);
+}
+
 function importJson(mode="replace"){
   const f=$("#impF").files?.[0];
   if(!f){msg({title:"Importar",kind:"warning",body:"Seleccione un JSON."});return}
   const r=new FileReader();r.onload=()=>{
     try{
       const d=JSON.parse(String(r.result||"{}"));
+      // Soporte JSON cifrado
+      if(d && d.tag===SGF_ENC_TAG){
+        promptPassword('Desencriptar backup', async (pw)=>{
+          try{
+            const plain = await decryptJsonObject(d, pw);
+            // Reinyectar en flujo normal
+            const obj = plain.config?plain:(plain[STORAGE_KEY]||plain);
+            __importApply(obj, mode);
+          }catch(e){
+            console.error(e);
+            msg({title:'Importar',kind:'danger',body:'Contraseña inválida o archivo corrupto.'});
+          }
+        });
+        return;
+      }
       const obj=d.config?d:(d[STORAGE_KEY]||d);
-      if(!obj.config||!Array.isArray(obj.accounts)||!Array.isArray(obj.categories)||!Array.isArray(obj.movements)||!Array.isArray(obj.budgets)){
+if(!obj.config||!Array.isArray(obj.accounts)||!Array.isArray(obj.categories)||!Array.isArray(obj.movements)||!Array.isArray(obj.budgets)){
         msg({title:"Importar",kind:"danger",body:"El JSON no tiene estructura válida."});return;
       }
       if(mode==="merge"){
@@ -8632,34 +8735,38 @@ function exportJson(){
       audit:state.audit,
       meta:state.meta
     };
-    const json=JSON.stringify(payload,(k,v)=>{
-      if(v instanceof Map) return [...v.entries()];
-      if(v instanceof Set) return [...v];
-      if(typeof v==="function") return undefined;
-      if(typeof v==="number" && !Number.isFinite(v)) return null;
-      return v;
-    },2);
-    const blob=new Blob([json],{type:"application/json"});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement("a");
-    const d=new Date();
-    const pad=(n)=>String(n).padStart(2,"0");
-    const stamp=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
-    a.href=url;
-    a.download=`SGF_backup_${ver}_${stamp}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),500);
-    logEvent("export","system",null,`Export JSON (${ver})`);
-    toast("Exportación generada.","success");
+
+    promptPassword("Exportar JSON cifrado", async (pw)=>{
+      try{
+        const enc = await encryptJsonObject(payload, pw);
+
+        const json=JSON.stringify(enc,null,2);
+        const blob=new Blob([json],{type:"application/json"});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement("a");
+        const d=new Date();
+        const pad=(n)=>String(n).padStart(2,"0");
+        const stamp=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+        a.href=url;
+        a.download=`SGF_backup_${ver}_${stamp}.enc.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),500);
+        logEvent("export","system",null,`Export JSON cifrado (${ver})`);
+        toast("Exportación cifrada generada.","success");
+      }catch(e){
+        console.error(e);
+        msg({title:"Exportar",kind:"danger",body:"No se pudo cifrar/exportar el JSON. Revisa consola (F12)."});
+      }
+    });
   }catch(e){
     console.error(e);
-    msg({title:"Exportar",kind:"danger",body:"No se pudo exportar el JSON. Abre la consola (F12) para ver el error y usa la versión corregida."});
+    msg({title:"Exportar",kind:"danger",body:"No se pudo exportar el JSON. Abre la consola (F12) para ver el error."});
   }
 }
 
-function csvDialog(){
+function csvDialogfunction csvDialog(){
   msg({
     title:"Exportar CSV",
     kind:"info",
