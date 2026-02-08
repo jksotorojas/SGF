@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="es" data-theme="finpro">
 <head>
@@ -698,6 +697,7 @@ button.rep-link:hover,
             <button class="btn btn-primary" id="btnQuickAdd" type="button"><i class="bi bi-plus-lg"></i> Nuevo</button>
             <button class="btn btn-outline-dark" id="btnConfig" type="button" onclick="go('settings');"><i class="bi bi-gear"></i> Configuración</button>
             <button class="btn btn-outline-dark" id="btnExport" type="button" onclick="exportJson();"><i class="bi bi-download"></i> Exportar</button>
+            <button class="btn btn-outline-danger" id="btnLogout" type="button" onclick="authLogout()" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i> Salir</button>
           </div>
         </div>
         <div class="topnav" id="topNavWrap">
@@ -1187,6 +1187,14 @@ function backupRestoreOk(ts){
     logEvent("restore-backup","system",null,`Restore auto-backup ${ts}`);
     toast("Backup restaurado.","success");
     render(state.ui.route);
+
+  // Auth UI
+  try{
+    const a = authGet();
+    const b = document.getElementById("btnLogout");
+    if(b) b.style.display = (a && a.enabled) ? "" : "none";
+  }catch{}
+
   }catch(e){
     console.error(e);
     msg({title:"Restaurar",kind:"danger",body:"No se pudo restaurar el backup."});
@@ -9636,8 +9644,26 @@ const AUTH_SESSION_KEY = "sgf_auth_ok_v1";
 const AUTH_MIN_LEN = 4;
 
 function authGet(){
-  state.config = state.config || {};
-  return state.config.auth || null;
+  // 1) Si ya está cargado en memoria
+  try{
+    state.config = state.config || {};
+    if(state.config.auth) return state.config.auth;
+  }catch{}
+
+  // 2) Pre-boot: leer auth desde localStorage (para no pedir setup siempre)
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const d = JSON.parse(raw);
+      const cfg = d?.config || d?.[STORAGE_KEY]?.config || null;
+      const a = cfg?.auth || null;
+      if(a){
+        try{ state.config = state.config || {}; state.config.auth = a; }catch{}
+        return a;
+      }
+    }
+  }catch{}
+  return null;
 }
 function authSet(a){
   state.config = state.config || {};
@@ -9766,6 +9792,14 @@ function authGate(){
   if(!ok){ authShow("login"); return true; }
   return false;
 }
+
+
+function authLogout(){
+  try{ sessionStorage.removeItem(AUTH_SESSION_KEY); }catch{}
+  try{ document.getElementById("authOV")?.remove(); }catch{}
+  try{ authShow("login"); }catch{ location.reload(); }
+}
+
 
 function bootAfterAuth(){ /* asignado por boot() */ }
 
