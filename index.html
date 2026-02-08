@@ -9847,6 +9847,7 @@ function authOverlayHtml(mode){
 }
 
 function authShow(mode){
+  try{ document.getElementById("pwOV")?.remove(); }catch{}
   try{ document.getElementById("authOV")?.remove(); }catch{}
   document.body.insertAdjacentHTML("beforeend", authOverlayHtml(mode));
 
@@ -9918,7 +9919,8 @@ function authGate(){
 function authLogout(){
   try{ sessionStorage.removeItem(AUTH_SESSION_KEY); }catch{}
   try{ document.getElementById("authOV")?.remove(); }catch{}
-  try{ authShow("login"); }catch{ location.reload(); }
+  try{ document.getElementById("pwOV")?.remove(); }catch{}
+  try{ location.reload(); }catch{}
 }
 
 
@@ -9927,9 +9929,10 @@ function bootAfterAuth(){ /* asignado por boot() */ }
 
 
 function boot(){
+  // Siempre construye UI primero (menú/módulos), luego bloquea con overlay si no hay sesión.
   try{ bootAfterAuth = bootCore; }catch{}
-  try{ if(authGate()) return; }catch{}
   bootCore();
+  try{ if(authGate()) return; }catch{}
 }
 
 
