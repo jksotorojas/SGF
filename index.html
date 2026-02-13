@@ -2,1828 +2,599 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>SGF - Sistema de Gestión de Finanzas (UI Fase 1) v1.01</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SGF · Sistema de Gestión de Finanzas</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="theme-finpro">
+<body>
+  <!-- App Shell -->
+  <div class="app" data-theme="finpro">
+    <!-- Topbar -->
+    <header class="topbar">
+      <button class="icon-btn" id="btnMenu" aria-label="Abrir menú" title="Menú">
+        <span class="i">☰</span>
+      </button>
 
-  <!-- ============ GATE / LOGIN (Pantalla inicial) ============ -->
-  <main id="gate" class="gate">
-    <section class="gate-card">
-      <header class="gate-header">
-        <div class="brand">
-          <div class="logo">SGF</div>
-          <div>
-            <h1>Sistema de Gestión de Finanzas</h1>
-            <p class="muted">Fase 1: Diseño UI (sin funcionalidad) — v1.01</p>
-          </div>
+      <div class="brand">
+        <div class="logo">SGF</div>
+        <div class="brand-text">
+          <div class="brand-title">Sistema de Finanzas</div>
+          <div class="brand-sub">Fase 1 · UI · v1.01</div>
         </div>
-      </header>
+      </div>
 
-      <form class="grid-2" autocomplete="off" onsubmit="return false;">
-        <div class="field">
-          <label for="gUser">Usuario</label>
-          <input id="gUser" type="text" placeholder="usuario" />
-        </div>
-        <div class="field">
-          <label for="gPass">Contraseña</label>
-          <input id="gPass" type="password" placeholder="********" />
-        </div>
+      <div class="topbar-actions">
+        <div class="pill" title="Base local (futuro: IndexedDB)">🗄️ Local</div>
+        <button class="btn btn-ghost" id="btnTheme" title="Cambiar tema">Tema</button>
+        <button class="btn btn-ghost" id="btnQuickSave" title="Guardar (UI)">Guardar</button>
+        <button class="btn btn-danger" id="btnLogout" title="Cerrar sesión">Salir</button>
+      </div>
+    </header>
 
-        <div class="field col-span-2">
-          <label for="gDbMode">Modo</label>
-          <select id="gDbMode">
-            <option>Local (IndexedDB) - Diseño</option>
-            <option>Importar archivo cifrado - Diseño</option>
-          </select>
-          <p class="hint">En Fase 1 no se usa IndexedDB; solo UI.</p>
-        </div>
-
-        <div class="actions col-span-2">
-          <button class="btn primary" data-action="enterApp">Entrar</button>
-          <button class="btn" data-modal-open="mCreateUser">Crear usuario</button>
-          <button class="btn" data-modal-open="mOpenDb">Abrir base</button>
-          <button class="btn danger" data-modal-open="mDeleteUsers">Eliminar usuarios (este dispositivo)</button>
-        </div>
-      </form>
-
-      <footer class="gate-footer">
-        <span class="pill">Multimoneda</span>
-        <span class="pill">Multi-dispositivo</span>
-        <span class="pill">Temas</span>
-      </footer>
-    </section>
-  </main>
-
-  <!-- ============ APP SHELL ============ -->
-  <div id="app" class="app hidden">
     <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-top">
-        <div class="brand mini">
-          <div class="logo sm">SGF</div>
-          <div class="brand-meta">
-            <strong>SGF</strong>
-            <span class="muted small">UI Fase 1 — v1.01</span>
+    <aside class="sidebar" id="sidebar" aria-label="Menú principal">
+      <div class="sidebar-head">
+        <div class="userbox">
+          <div class="avatar">M</div>
+          <div class="user-meta">
+            <div class="user-name">Maximus</div>
+            <div class="user-hint">Sesión activa</div>
           </div>
-        </div>
-
-        <div class="sidebar-actions">
-          <button class="btn ghost" data-modal-open="mQuickActions">Acciones</button>
-          <button class="btn ghost" data-action="logout">Salir</button>
         </div>
       </div>
 
       <nav class="nav">
-        <button class="nav-item active" data-route="dashboard">Dashboard</button>
-        <button class="nav-item" data-route="movimientos">Movimientos</button>
-        <button class="nav-item" data-route="ahorros">Ahorros</button>
-        <button class="nav-item" data-route="presupuestos">Presupuestos</button>
-        <button class="nav-item" data-route="conciliaciones">Conciliaciones</button>
-        <div class="nav-group">
-          <div class="nav-group-title">Catálogos</div>
-          <button class="nav-item" data-route="cat-cuentas">Cuentas</button>
-          <button class="nav-item" data-route="cat-tipos">Tipos de cuentas</button>
-          <button class="nav-item" data-route="cat-categorias">Categorías</button>
-        </div>
-        <button class="nav-item" data-route="configuracion">Configuración</button>
+        <button class="nav-item is-active" data-view="dashboard">
+          <span class="nav-ico">📊</span><span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-view="movements">
+          <span class="nav-ico">🧾</span><span>Movimientos</span>
+        </button>
+        <button class="nav-item" data-view="savings">
+          <span class="nav-ico">🏦</span><span>Ahorros</span>
+        </button>
+        <button class="nav-item" data-view="budgets">
+          <span class="nav-ico">🎯</span><span>Presupuestos</span>
+        </button>
+        <button class="nav-item" data-view="reconciliations">
+          <span class="nav-ico">✅</span><span>Conciliaciones</span>
+        </button>
+
+        <div class="nav-sep"></div>
+
+        <button class="nav-item" data-view="catalogs">
+          <span class="nav-ico">🗂️</span><span>Catálogos</span>
+        </button>
+        <button class="nav-item" data-view="settings">
+          <span class="nav-ico">⚙️</span><span>Configuración</span>
+        </button>
+
+        <div class="nav-sep"></div>
+
+        <button class="nav-item" data-modal="gateTools">
+          <span class="nav-ico">🔐</span><span>Gate (Usuarios/DB)</span>
+        </button>
+        <button class="nav-item" data-modal="help">
+          <span class="nav-ico">❓</span><span>Ayuda</span>
+        </button>
       </nav>
 
-      <div class="sidebar-bottom">
-        <div class="stat">
-          <span class="muted small">Moneda base</span>
-          <strong>CRC</strong>
-        </div>
-        <div class="stat">
-          <span class="muted small">Secundaria</span>
-          <strong>USD</strong>
+      <div class="sidebar-foot">
+        <div class="hint">
+          UI basada en requerimientos SGF (sin persistencia aún).
         </div>
       </div>
     </aside>
 
-    <!-- Content -->
-    <section class="content">
-      <!-- Topbar -->
-      <header class="topbar">
-        <div class="topbar-left">
-          <button class="btn ghost hide-desktop" data-action="toggleSidebar">☰</button>
-          <div>
-            <h2 id="pageTitle">Dashboard</h2>
-            <p id="pageSubtitle" class="muted">Resumen general</p>
-          </div>
-        </div>
-
-        <div class="topbar-right">
-          <div class="chip">
-            <span class="muted small">Usuario</span>
-            <strong id="uiUser">demo</strong>
-          </div>
-          <button class="btn" data-modal-open="mExportImport">Export/Import</button>
-          <button class="btn" data-modal-open="mAbout">Acerca de</button>
-        </div>
-      </header>
-
-      <!-- Routes -->
-      <div class="routes">
-
-        <!-- DASHBOARD -->
-        <section class="route" data-route-view="dashboard">
-          <div class="grid-3">
-            <div class="card">
-              <div class="card-header">
-                <h3>Balance</h3>
-                <button class="btn ghost" data-modal-open="mDashboardFilters">Filtros</button>
-              </div>
-              <div class="kpis">
-                <div class="kpi">
-                  <span class="muted small">Ingresos</span>
-                  <strong>₡ 0.00</strong>
-                </div>
-                <div class="kpi">
-                  <span class="muted small">Gastos</span>
-                  <strong>₡ 0.00</strong>
-                </div>
-                <div class="kpi">
-                  <span class="muted small">Ahorro</span>
-                  <strong>₡ 0.00</strong>
-                </div>
-              </div>
-              <div class="placeholder-chart">[Gráfica (UI)]</div>
-            </div>
-
-            <div class="card">
-              <div class="card-header">
-                <h3>Top categorías</h3>
-                <button class="btn ghost" data-modal-open="mDashboardFilters">Filtros</button>
-              </div>
-              <div class="placeholder-chart">[Barras (UI)]</div>
-              <div class="muted small">Agrupar por periodo/cuentas/categorías (UI)</div>
-            </div>
-
-            <div class="card">
-              <div class="card-header">
-                <h3>Alertas</h3>
-                <button class="btn ghost" data-modal-open="mQuickActions">Acciones</button>
-              </div>
-              <ul class="list">
-                <li class="list-item">Sin alertas (UI)</li>
-                <li class="list-item">Presupuestos por vencer (UI)</li>
-                <li class="list-item">Conciliación pendiente (UI)</li>
-              </ul>
+    <!-- Main -->
+    <main class="main" id="main">
+      <!-- LOGIN / GATE (pantalla sobrepuesta) -->
+      <section class="gate" id="gateScreen" aria-label="Acceso">
+        <div class="gate-card">
+          <div class="gate-title">
+            <div class="logo big">SGF</div>
+            <div>
+              <h1>Acceso</h1>
+              <p>Usuario + contraseña (Fase 1: UI). Futuro: base cifrada en IndexedDB.</p>
             </div>
           </div>
 
-          <div class="card">
-            <div class="card-header">
-              <h3>Últimos movimientos</h3>
-              <div class="row gap">
-                <button class="btn" data-route-jump="movimientos">Ir a Movimientos</button>
-                <button class="btn primary" data-modal-open="mMoveNew">Nuevo movimiento</button>
-              </div>
+          <form class="grid2" id="gateForm" autocomplete="off">
+            <div class="field">
+              <label>Usuario</label>
+              <input type="text" placeholder="ej: maximus" required />
             </div>
-            <div class="table-wrap">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Fecha</th><th>Periodo</th><th>Tipo</th><th>Cuenta</th><th>Categoría</th><th>Monto</th><th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="right">₡ 0.00</td>
-                    <td class="right">
-                      <button class="btn sm" data-modal-open="mMoveEdit">Editar</button>
-                      <button class="btn sm danger" data-modal-open="mMoveDelete">Eliminar</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- MOVIMIENTOS -->
-        <section class="route hidden" data-route-view="movimientos">
-          <div class="card">
-            <div class="card-header">
-              <h3>Filtros</h3>
-              <div class="row gap">
-                <button class="btn" data-modal-open="mMoveFilters">Editar filtros</button>
-                <button class="btn" data-modal-open="mMoveGroup">Agrupar</button>
-                <button class="btn primary" data-modal-open="mMoveNew">Nuevo movimiento</button>
-                <button class="btn" data-modal-open="mRecurringNew">Nuevo recurrente</button>
-                <button class="btn" data-modal-open="mRecurringGenerate">Generar por mes</button>
-              </div>
-            </div>
-
-            <div class="filters-inline">
-              <div class="pill">Año: —</div>
-              <div class="pill">Mes: —</div>
-              <div class="pill">Tipo: —</div>
-              <div class="pill">Cuenta: —</div>
-              <div class="pill">Categoría: —</div>
-              <div class="pill">Moneda: —</div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <h3>Tabla de movimientos</h3>
-              <button class="btn" data-modal-open="mMoveColumns">Columnas</button>
-            </div>
-
-            <div class="table-wrap">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Fecha</th><th>Periodo</th><th>Tipo</th><th>Cuenta origen</th><th>Cuenta destino</th>
-                    <th>Categoría</th><th>Descripción</th><th class="right">Monto</th><th>Moneda</th><th class="right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>—</td><td>YYYY-MM</td><td>Gasto</td><td>—</td><td>—</td><td>—</td><td>—</td>
-                    <td class="right">0.00</td><td>CRC</td>
-                    <td class="right">
-                      <button class="btn sm" data-modal-open="mMoveEdit">Editar</button>
-                      <button class="btn sm" data-modal-open="mMoveSplit">Split</button>
-                      <button class="btn sm danger" data-modal-open="mMoveDelete">Eliminar</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-          </div>
-        </section>
-
-        <!-- AHORROS -->
-        <section class="route hidden" data-route-view="ahorros">
-          <div class="card">
-            <div class="card-header">
-              <h3>Ahorros</h3>
-              <div class="row gap">
-                <button class="btn" data-modal-open="mSavingsFilters">Filtros</button>
-                <button class="btn primary" data-modal-open="mSavingsNew">Nuevo ahorro</button>
-                <button class="btn" data-modal-open="mGoals">Metas</button>
-              </div>
-            </div>
-
-            <div class="table-wrap">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Fecha</th><th>Periodo</th><th>Tipo</th><th>Categoría</th><th>Cuenta origen</th><th>Cuenta destino</th>
-                    <th class="right">Monto</th><th>Meta</th><th>Descripción</th><th class="right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>—</td><td>YYYY-MM</td><td>Depósito</td><td>—</td><td>—</td><td>—</td>
-                    <td class="right">0.00</td><td>—</td><td>—</td>
-                    <td class="right">
-                      <button class="btn sm" data-modal-open="mSavingsEdit">Editar</button>
-                      <button class="btn sm" data-modal-open="mSavingsWithdraw">Retirar</button>
-                      <button class="btn sm danger" data-modal-open="mSavingsDelete">Eliminar</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="grid-2">
-            <div class="card">
-              <div class="card-header">
-                <h3>Progreso de metas</h3>
-                <button class="btn" data-modal-open="mGoals">Administrar</button>
-              </div>
-              <div class="placeholder-chart">[Progreso metas (UI)]</div>
-            </div>
-
-            <div class="card">
-              <div class="card-header">
-                <h3>Saldo cuenta ahorro (UI)</h3>
-                <button class="btn" data-modal-open="mConfigSavingsDefaults">Config</button>
-              </div>
-              <div class="kpis">
-                <div class="kpi">
-                  <span class="muted small">CRC</span>
-                  <strong>₡ 0.00</strong>
-                </div>
-                <div class="kpi">
-                  <span class="muted small">USD</span>
-                  <strong>$ 0.00</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- PRESUPUESTOS -->
-        <section class="route hidden" data-route-view="presupuestos">
-          <div class="card">
-            <div class="card-header">
-              <h3>Presupuestos</h3>
-              <div class="row gap">
-                <button class="btn" data-modal-open="mBudgetFilters">Filtros</button>
-                <button class="btn primary" data-modal-open="mBudgetNew">Nuevo presupuesto</button>
-                <button class="btn" data-modal-open="mBudgetRecurring">Presupuesto recurrente</button>
-              </div>
-            </div>
-
-            <div class="table-wrap">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Periodo</th><th>Tipo</th><th>Categoría</th><th>Moneda</th>
-                    <th class="right">Presupuestado</th><th class="right">Consumido</th><th>%</th><th>Barra</th><th>Recurrente</th><th>Activo</th>
-                    <th class="right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>YYYY-MM</td><td>Gasto</td><td>—</td><td>CRC</td>
-                    <td class="right">0.00</td><td class="right">0.00</td><td>0%</td>
-                    <td><div class="progress"><div class="progress-bar" style="width:12%"></div></div></td>
-                    <td>No</td><td>Sí</td>
-                    <td class="right">
-                      <button class="btn sm" data-modal-open="mBudgetEdit">Editar</button>
-                      <button class="btn sm danger" data-modal-open="mBudgetDelete">Eliminar</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-          </div>
-        </section>
-
-        <!-- CONCILIACIONES -->
-        <section class="route hidden" data-route-view="conciliaciones">
-          <div class="card">
-            <div class="card-header">
-              <h3>Conciliaciones</h3>
-              <div class="row gap">
-                <button class="btn" data-modal-open="mConFilters">Filtros</button>
-                <button class="btn primary" data-modal-open="mConNew">Nueva conciliación</button>
-                <button class="btn" data-modal-open="mConExportCsv">Export CSV</button>
-              </div>
-            </div>
-
-            <div class="table-wrap">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Cuenta</th><th>Año</th><th>Mes</th><th class="right">Final banco</th><th class="right">Final SGF</th>
-                    <th class="right">Diferencia</th><th>No conciliados</th><th>Estado</th><th class="right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>—</td><td>2026</td><td>02</td>
-                    <td class="right">0.00</td><td class="right">0.00</td><td class="right">0.00</td>
-                    <td>0</td><td>Abierta</td>
-                    <td class="right">
-                      <button class="btn sm" data-modal-open="mConDetail">Detalle</button>
-                      <button class="btn sm" data-modal-open="mConClose">Cerrar</button>
-                      <button class="btn sm danger" data-modal-open="mConDelete">Eliminar</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- CATÁLOGOS: CUENTAS -->
-        <section class="route hidden" data-route-view="cat-cuentas">
-          <div class="card">
-            <div class="card-header">
-              <h3>Catálogo: Cuentas</h3>
-              <div class="row gap">
-                <button class="btn primary" data-modal-open="mAccNew">Nueva cuenta</button>
-                <button class="btn" data-modal-open="mAccColors">Regenerar colores</button>
-                <button class="btn" data-modal-open="mAccTree">Vista árbol</button>
-              </div>
-            </div>
-
-            <div class="tree placeholder-tree">
-              <div class="tree-node">
-                <span class="dot"></span> Banco
-                <div class="tree-children">
-                  <div class="tree-node"><span class="dot"></span> Cuenta Corriente</div>
-                  <div class="tree-node"><span class="dot"></span> Cuenta Ahorro</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="table-wrap">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Nombre</th><th>Tipo</th><th>Padre</th><th>Moneda</th><th>Activa</th><th>Saldo inicial</th><th>Permite negativo</th><th class="right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>—</td><td>Banco</td><td>—</td><td>CRC</td><td>Sí</td><td>0.00</td><td>No</td>
-                    <td class="right">
-                      <button class="btn sm" data-modal-open="mAccEdit">Editar</button>
-                      <button class="btn sm" data-modal-open="mAccDisable">Deshabilitar</button>
-                      <button class="btn sm danger" data-modal-open="mAccDelete">Eliminar</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-          </div>
-        </section>
-
-        <!-- CATÁLOGOS: TIPOS DE CUENTA -->
-        <section class="route hidden" data-route-view="cat-tipos">
-          <div class="card">
-            <div class="card-header">
-              <h3>Catálogo: Tipos de cuenta</h3>
-              <div class="row gap">
-                <button class="btn primary" data-modal-open="mTypeNew">Nuevo tipo</button>
-              </div>
-            </div>
-
-            <div class="table-wrap">
-              <table class="table">
-                <thead>
-                  <tr><th>Nombre</th><th>Base</th><th>En uso</th><th class="right">Acciones</th></tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Banco</td><td>Sí</td><td>Sí</td>
-                    <td class="right">
-                      <button class="btn sm" data-modal-open="mTypeEdit">Editar</button>
-                      <button class="btn sm danger" data-modal-open="mTypeDelete">Eliminar</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- CATÁLOGOS: CATEGORÍAS -->
-        <section class="route hidden" data-route-view="cat-categorias">
-          <div class="card">
-            <div class="card-header">
-              <h3>Catálogo: Categorías</h3>
-              <div class="row gap">
-                <button class="btn primary" data-modal-open="mCatNew">Nueva categoría</button>
-                <button class="btn" data-modal-open="mCatTree">Vista árbol</button>
-              </div>
-            </div>
-
-            <div class="tree placeholder-tree">
-              <div class="tree-node">
-                <span class="dot"></span> Hogar
-                <div class="tree-children">
-                  <div class="tree-node"><span class="dot"></span> Luz</div>
-                  <div class="tree-node"><span class="dot"></span> Internet</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="table-wrap">
-              <table class="table">
-                <thead>
-                  <tr><th>Nombre</th><th>Padre</th><th>Color</th><th>Activa</th><th class="right">Acciones</th></tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>—</td><td>—</td><td><span class="swatch"></span></td><td>Sí</td>
-                    <td class="right">
-                      <button class="btn sm" data-modal-open="mCatEdit">Editar</button>
-                      <button class="btn sm" data-modal-open="mCatDisable">Deshabilitar</button>
-                      <button class="btn sm danger" data-modal-open="mCatDelete">Eliminar</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-          </div>
-        </section>
-
-        <!-- CONFIGURACIÓN -->
-        <section class="route hidden" data-route-view="configuracion">
-          <div class="grid-2">
-            <div class="card">
-              <div class="card-header">
-                <h3>Preferencias</h3>
-                <button class="btn" data-modal-open="mConfigTheme">Tema</button>
-              </div>
-
-              <div class="form">
-                <div class="field">
-                  <label>Menú</label>
-                  <select>
-                    <option>Lateral</option>
-                    <option>Superior (UI)</option>
-                  </select>
-                </div>
-
-                <div class="field">
-                  <label>Moneda base</label>
-                  <select>
-                    <option>CRC</option>
-                    <option>USD</option>
-                  </select>
-                </div>
-
-                <div class="field">
-                  <label>Moneda secundaria</label>
-                  <select>
-                    <option>USD</option>
-                    <option>CRC</option>
-                  </select>
-                </div>
-
-                <div class="field">
-                  <label>Tipo de cambio por defecto</label>
-                  <input type="number" placeholder="0.00" />
-                  <p class="hint">Histórico por fecha (UI) en modal.</p>
-                </div>
-
-                <div class="actions">
-                  <button class="btn" data-modal-open="mConfigFxHistory">Histórico FX</button>
-                  <button class="btn" data-modal-open="mConfigSavingsDefaults">Cuentas ahorro default</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-header">
-                <h3>Utilidades</h3>
-                <div class="row gap">
-                  <button class="btn" data-modal-open="mExportImport">Export/Import</button>
-                  <button class="btn danger" data-modal-open="mResetAll">Reset completo</button>
-                </div>
-              </div>
-
-              <ul class="list">
-                <li class="list-item">
-                  <div>
-                    <strong>Cargar estructura base</strong>
-                    <div class="muted small">Cuentas/categorías/tipos iniciales (UI)</div>
-                  </div>
-                  <button class="btn sm" data-modal-open="mLoadBase">Cargar</button>
-                </li>
-                <li class="list-item">
-                  <div>
-                    <strong>Cargar demo</strong>
-                    <div class="muted small">Movimientos/ahorros/metas/presupuestos/conciliaciones (UI)</div>
-                  </div>
-                  <button class="btn sm" data-modal-open="mLoadDemo">Cargar</button>
-                </li>
-                <li class="list-item">
-                  <div>
-                    <strong>Diagnosticar y reparar</strong>
-                    <div class="muted small">Revisión DB local (UI)</div>
-                  </div>
-                  <button class="btn sm" data-modal-open="mRepair">Ejecutar</button>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-      </div>
-    </section>
-  </div>
-
-  <!-- ================== MODALS ================== -->
-  <div class="modal-overlay hidden" id="modalOverlay" aria-hidden="true"></div>
-
-  <!-- Gate modals -->
-  <div class="modal hidden" id="mCreateUser" role="dialog" aria-modal="true" aria-labelledby="mCreateUserTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mCreateUserTitle">Crear usuario</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="field">
-          <label>Usuario</label>
-          <input placeholder="nuevo_usuario" />
-        </div>
-        <div class="field">
-          <label>Contraseña</label>
-          <input type="password" placeholder="********" />
-        </div>
-        <div class="field">
-          <label>Confirmar contraseña</label>
-          <input type="password" placeholder="********" />
-        </div>
-        <div class="field">
-          <label>Notas (UI)</label>
-          <textarea rows="3" placeholder="Opcional"></textarea>
-        </div>
-        <p class="hint">Generaría DB cifrada y la guardaría en IndexedDB (Fase 2).</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Crear</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mOpenDb" role="dialog" aria-modal="true" aria-labelledby="mOpenDbTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mOpenDbTitle">Abrir base</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="field">
-          <label>Origen</label>
-          <select>
-            <option>Local (IndexedDB) - UI</option>
-            <option>Archivo importado cifrado - UI</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Seleccionar archivo (UI)</label>
-          <input type="file" />
-        </div>
-        <div class="field">
-          <label>Contraseña</label>
-          <input type="password" placeholder="********" />
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Abrir</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mDeleteUsers" role="dialog" aria-modal="true" aria-labelledby="mDeleteUsersTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mDeleteUsersTitle">Eliminar usuarios locales</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p>Esto borraría todos los usuarios y DB locales en este dispositivo (UI).</p>
-        <div class="warn">Acción destructiva.</div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn danger" data-action="fakeOk">Eliminar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Global modals -->
-  <div class="modal hidden" id="mAbout" role="dialog" aria-modal="true" aria-labelledby="mAboutTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mAboutTitle">Acerca de</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p><strong>SGF</strong> UI Fase 1 (v1.01). Diseño basado en el alcance descrito.</p>
-        <p class="muted small">Fase 2: persistencia con IndexedDB, cifrado, reglas y cálculos.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn primary" data-modal-close>Cerrar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mQuickActions" role="dialog" aria-modal="true" aria-labelledby="mQuickActionsTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mQuickActionsTitle">Acciones rápidas</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="grid-2">
-          <button class="btn" data-modal-open="mMoveNew">Nuevo movimiento</button>
-          <button class="btn" data-modal-open="mSavingsNew">Nuevo ahorro</button>
-          <button class="btn" data-modal-open="mBudgetNew">Nuevo presupuesto</button>
-          <button class="btn" data-modal-open="mConNew">Nueva conciliación</button>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn primary" data-modal-close>Cerrar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mExportImport" role="dialog" aria-modal="true" aria-labelledby="mExportImportTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mExportImportTitle">Exportar / Importar</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="grid-2">
-          <div class="card soft">
-            <h4>Exportar (UI)</h4>
-            <p class="muted small">Generaría archivo cifrado y/o backup.</p>
-            <button class="btn">Exportar</button>
-          </div>
-          <div class="card soft">
-            <h4>Importar (UI)</h4>
-            <input type="file" />
             <div class="field">
               <label>Contraseña</label>
-              <input type="password" placeholder="********" />
+              <input type="password" placeholder="••••••••" required />
             </div>
-            <button class="btn">Importar</button>
+            <div class="field">
+              <label>Acción</label>
+              <select>
+                <option value="open">Abrir base local</option>
+                <option value="create">Crear usuario (DB nueva)</option>
+                <option value="import">Abrir desde archivo importado</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Archivo (opcional)</label>
+              <input type="file" />
+            </div>
+
+            <div class="gate-actions">
+              <button type="button" class="btn btn-ghost" data-modal="gateTools">Herramientas</button>
+              <button type="submit" class="btn btn-primary">Entrar</button>
+            </div>
+
+            <div class="note">
+              Reglas/objetivo: acceso por usuario + contraseña, base cifrada y local por usuario.
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- VIEWS -->
+      <!-- Dashboard -->
+      <section class="view is-active" id="view-dashboard" data-view="dashboard">
+        <header class="view-head">
+          <h2>Dashboard</h2>
+          <div class="view-actions">
+            <button class="btn btn-ghost" data-modal="dashFilters">Filtros</button>
+            <button class="btn btn-primary" data-modal="dashQuickAdd">Agregar rápido</button>
           </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn primary" data-modal-close>Cerrar</button>
-      </div>
-    </div>
-  </div>
+        </header>
 
-  <!-- Dashboard -->
-  <div class="modal hidden" id="mDashboardFilters" role="dialog" aria-modal="true" aria-labelledby="mDashboardFiltersTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mDashboardFiltersTitle">Filtros Dashboard</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="grid-2">
-          <div class="field">
-            <label>Año</label>
-            <select><option>—</option><option>2026</option><option>2025</option></select>
+        <div class="cards">
+          <article class="card">
+            <h3>Saldo total</h3>
+            <div class="kpi">₡ 0.00</div>
+            <div class="sub">Moneda base (UI)</div>
+          </article>
+          <article class="card">
+            <h3>Ingresos (mes)</h3>
+            <div class="kpi">₡ 0.00</div>
+            <div class="sub">Por periodo contable</div>
+          </article>
+          <article class="card">
+            <h3>Gastos (mes)</h3>
+            <div class="kpi">₡ 0.00</div>
+            <div class="sub">Por periodo contable</div>
+          </article>
+          <article class="card">
+            <h3>Diferencia</h3>
+            <div class="kpi">₡ 0.00</div>
+            <div class="sub">Ingresos - Gastos</div>
+          </article>
+        </div>
+
+        <div class="grid2 gap">
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Resumen por Cuenta</h3>
+              <button class="btn btn-ghost" data-modal="dashAccounts">Ver detalle</button>
+            </div>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Cuenta</th>
+                    <th class="right">Saldo</th>
+                    <th>Moneda</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Banco · Principal</td>
+                    <td class="right">₡ 0.00</td>
+                    <td>CRC</td>
+                    <td><span class="tag ok">Activa</span></td>
+                  </tr>
+                  <tr>
+                    <td>Tarjeta · Visa</td>
+                    <td class="right">₡ 0.00</td>
+                    <td>CRC</td>
+                    <td><span class="tag warn">Activa</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Presupuesto · Progreso</h3>
+              <button class="btn btn-ghost" data-view="budgets">Ir a presupuestos</button>
+            </div>
+            <div class="progress-list">
+              <div class="progress-item">
+                <div class="row">
+                  <strong>Alimentación</strong>
+                  <span>0% · ₡0.00 / ₡0.00</span>
+                </div>
+                <div class="bar"><div class="bar-fill" style="width:0%"></div></div>
+              </div>
+              <div class="progress-item">
+                <div class="row">
+                  <strong>Servicios</strong>
+                  <span>0% · ₡0.00 / ₡0.00</span>
+                </div>
+                <div class="bar"><div class="bar-fill" style="width:0%"></div></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- Movimientos -->
+      <section class="view" id="view-movements" data-view="movements">
+        <header class="view-head">
+          <h2>Movimientos</h2>
+          <div class="view-actions">
+            <button class="btn btn-ghost" data-modal="movFilters">Filtros</button>
+            <button class="btn btn-ghost" data-modal="movGroup">Agrupar</button>
+            <button class="btn btn-ghost" data-modal="movRecurringGen">Generar por mes</button>
+            <button class="btn btn-primary" data-modal="movCreate">Nuevo movimiento</button>
           </div>
-          <div class="field">
-            <label>Mes</label>
-            <select><option>—</option><option>01</option><option>02</option></select>
+        </header>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Tabla</h3>
+            <div class="panel-actions">
+              <button class="btn btn-ghost" data-modal="movImport">Importar</button>
+              <button class="btn btn-ghost" data-modal="movExport">Exportar</button>
+            </div>
           </div>
-          <div class="field">
-            <label>Cuenta</label>
-            <select><option>—</option></select>
+
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Periodo</th>
+                  <th>Tipo</th>
+                  <th>Cuenta</th>
+                  <th>Cuenta destino</th>
+                  <th>Categoría</th>
+                  <th>Descripción</th>
+                  <th class="right">Monto</th>
+                  <th>Moneda</th>
+                  <th class="right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+                  <td class="right">0.00</td><td>CRC</td>
+                  <td class="right">
+                    <button class="mini" data-modal="movEdit">Editar</button>
+                    <button class="mini" data-modal="movDelete">Eliminar</button>
+                    <button class="mini" data-modal="movRecurring">Recurrente</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <div class="field">
-            <label>Moneda</label>
-            <select><option>—</option><option>CRC</option><option>USD</option></select>
+        </section>
+      </section>
+
+      <!-- Ahorros -->
+      <section class="view" id="view-savings" data-view="savings">
+        <header class="view-head">
+          <h2>Ahorros</h2>
+          <div class="view-actions">
+            <button class="btn btn-ghost" data-modal="savFilters">Filtros</button>
+            <button class="btn btn-ghost" data-modal="goalList">Metas</button>
+            <button class="btn btn-primary" data-modal="savCreate">Nuevo ahorro</button>
           </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Aplicar</button>
-      </div>
-    </div>
-  </div>
+        </header>
 
-  <!-- Movimientos: filtros / agrupar / columnas -->
-  <div class="modal hidden" id="mMoveFilters" role="dialog" aria-modal="true" aria-labelledby="mMoveFiltersTitle">
-    <div class="modal-card xl">
-      <div class="modal-header">
-        <h3 id="mMoveFiltersTitle">Filtros de Movimientos</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="grid-3">
-          <div class="field"><label>Año</label><select><option>—</option><option>2026</option></select></div>
-          <div class="field"><label>Mes</label><select><option>—</option><option>02</option></select></div>
-          <div class="field"><label>Periodo contable</label><input placeholder="YYYY-MM" /></div>
-
-          <div class="field"><label>Tipo</label><select><option>—</option><option>Gasto</option><option>Ingreso</option><option>Transferencia</option></select></div>
-          <div class="field"><label>Cuenta</label><select><option>—</option></select></div>
-          <div class="field"><label>Categoría</label><select><option>—</option></select></div>
-
-          <div class="field"><label>Texto</label><input placeholder="buscar en descripción/cuenta/categoría" /></div>
-          <div class="field"><label>Moneda</label><select><option>—</option><option>CRC</option><option>USD</option></select></div>
-          <div class="field"><label>Agrupar</label><select><option>Ninguno</option><option>Periodo</option><option>Cuentas</option><option>Categorías</option></select></div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Aplicar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mMoveGroup" role="dialog" aria-modal="true" aria-labelledby="mMoveGroupTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mMoveGroupTitle">Agrupar Movimientos</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="field">
-          <label>Criterio</label>
-          <select>
-            <option>Periodo</option>
-            <option>Cuentas</option>
-            <option>Categorías</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Modo</label>
-          <select>
-            <option>Resumen</option>
-            <option>Detalle</option>
-          </select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Aceptar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mMoveColumns" role="dialog" aria-modal="true" aria-labelledby="mMoveColumnsTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mMoveColumnsTitle">Columnas</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="checklist">
-          <label><input type="checkbox" checked /> Cuenta destino</label>
-          <label><input type="checkbox" checked /> Categoría</label>
-          <label><input type="checkbox" checked /> Moneda</label>
-          <label><input type="checkbox" checked /> Acciones</label>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Movimientos: CRUD -->
-  <div class="modal hidden" id="mMoveNew" role="dialog" aria-modal="true" aria-labelledby="mMoveNewTitle">
-    <div class="modal-card xl">
-      <div class="modal-header">
-        <h3 id="mMoveNewTitle">Nuevo movimiento</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="grid-3">
-          <div class="field"><label>Tipo</label>
-            <select><option>Gasto</option><option>Ingreso</option><option>Transferencia</option></select>
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Tabla</h3>
+            <div class="panel-actions">
+              <button class="btn btn-ghost" data-modal="savExport">Exportar</button>
+            </div>
           </div>
-          <div class="field"><label>Fecha</label><input type="date" /></div>
-          <div class="field"><label>Periodo contable</label><input placeholder="YYYY-MM" /></div>
 
-          <div class="field"><label>Cuenta origen</label><select><option>—</option></select></div>
-          <div class="field"><label>Cuenta destino (transferencia)</label><select><option>—</option></select></div>
-          <div class="field"><label>Categoría (opcional)</label><select><option>—</option></select></div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Año</th><th>Mes</th><th>Periodo</th><th>Categoría</th><th>Tipo</th>
+                  <th>Cuenta origen</th><th>Cuenta destino</th>
+                  <th>Meta</th><th>Descripción</th><th class="right">Monto</th><th class="right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>—</td><td>—</td><td>—</td><td>—</td><td>Depósito</td>
+                  <td>—</td><td>—</td>
+                  <td>—</td><td>—</td>
+                  <td class="right">0.00</td>
+                  <td class="right">
+                    <button class="mini" data-modal="savEdit">Editar</button>
+                    <button class="mini" data-modal="savWithdraw">Retirar</button>
+                    <button class="mini" data-modal="savDelete">Eliminar</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
 
-          <div class="field"><label>Monto</label><input type="number" step="0.01" placeholder="0.00" /></div>
-          <div class="field"><label>Moneda</label><select><option>CRC</option><option>USD</option></select></div>
-          <div class="field"><label>Tipo de cambio (si aplica)</label><input type="number" step="0.0001" placeholder="0.0000" /></div>
+      <!-- Presupuestos -->
+      <section class="view" id="view-budgets" data-view="budgets">
+        <header class="view-head">
+          <h2>Presupuestos</h2>
+          <div class="view-actions">
+            <button class="btn btn-ghost" data-modal="budFilters">Filtros</button>
+            <button class="btn btn-ghost" data-modal="budRecurring">Recurrente mensual</button>
+            <button class="btn btn-primary" data-modal="budCreate">Nuevo presupuesto</button>
+          </div>
+        </header>
 
-          <div class="field col-span-3"><label>Descripción (opcional)</label><input placeholder="detalle del movimiento" /></div>
-          <div class="field col-span-3"><label>Adjuntos (UI)</label><input type="file" multiple /></div>
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Tabla</h3>
+            <div class="panel-actions">
+              <button class="btn btn-ghost" data-modal="budExport">Exportar</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Periodo</th><th>Tipo</th><th>Categoría</th>
+                  <th class="right">Presupuestado</th><th class="right">Consumido</th>
+                  <th class="right">%</th><th>Barra</th><th>Recurrente</th><th>Estado</th><th class="right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>—</td><td>Gasto</td><td>—</td>
+                  <td class="right">0.00 CRC</td><td class="right">0.00</td>
+                  <td class="right">0%</td>
+                  <td><div class="bar sm"><div class="bar-fill" style="width:0%"></div></div></td>
+                  <td><span class="tag">No</span></td>
+                  <td><span class="tag ok">Activo</span></td>
+                  <td class="right">
+                    <button class="mini" data-modal="budEdit">Editar</button>
+                    <button class="mini" data-modal="budDelete">Eliminar</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- Conciliaciones -->
+      <section class="view" id="view-reconciliations" data-view="reconciliations">
+        <header class="view-head">
+          <h2>Conciliaciones</h2>
+          <div class="view-actions">
+            <button class="btn btn-ghost" data-modal="recFilters">Filtros</button>
+            <button class="btn btn-primary" data-modal="recCreate">Nueva conciliación</button>
+          </div>
+        </header>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Resumen mensual por cuenta</h3>
+            <div class="panel-actions">
+              <button class="btn btn-ghost" data-modal="recExport">Export CSV</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Cuenta</th><th>Periodo</th>
+                  <th class="right">Final Banco</th>
+                  <th class="right">Final SGF</th>
+                  <th class="right">Diferencia</th>
+                  <th class="right">No conciliados</th>
+                  <th>Estado</th>
+                  <th class="right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Banco · Principal</td><td>—</td>
+                  <td class="right">0.00</td><td class="right">0.00</td><td class="right">0.00</td>
+                  <td class="right">0</td>
+                  <td><span class="tag">Abierta</span></td>
+                  <td class="right">
+                    <button class="mini" data-modal="recDetail">Detalle</button>
+                    <button class="mini" data-modal="recClose">Cerrar</button>
+                    <button class="mini" data-modal="recReopen">Reabrir</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- Catálogos -->
+      <section class="view" id="view-catalogs" data-view="catalogs">
+        <header class="view-head">
+          <h2>Catálogos</h2>
+          <div class="view-actions">
+            <button class="btn btn-ghost" data-modal="catAccountTypes">Tipos de Cuenta</button>
+            <button class="btn btn-primary" data-modal="catCreateAny">Nuevo</button>
+          </div>
+        </header>
+
+        <div class="grid2 gap">
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Cuentas (Treeview)</h3>
+              <div class="panel-actions">
+                <button class="btn btn-ghost" data-modal="accCreate">Nueva cuenta</button>
+              </div>
+            </div>
+
+            <div class="tree" role="tree" aria-label="Cuentas">
+              <div class="tree-node" role="treeitem" aria-expanded="true">
+                <button class="tree-toggle" aria-label="Expandir">▾</button>
+                <span class="tree-label"><span class="dot" style="background:#4f7cff"></span> Banco</span>
+                <span class="tree-actions">
+                  <button class="mini" data-modal="accEdit">Editar</button>
+                  <button class="mini" data-modal="accDisable">Deshabilitar</button>
+                </span>
+              </div>
+              <div class="tree-children">
+                <div class="tree-node" role="treeitem" aria-expanded="false">
+                  <button class="tree-toggle" aria-label="Expandir">▸</button>
+                  <span class="tree-label"><span class="dot" style="background:#37b36b"></span> Principal (CRC)</span>
+                  <span class="tree-actions">
+                    <button class="mini" data-modal="accEdit">Editar</button>
+                    <button class="mini" data-modal="accDisable">Deshabilitar</button>
+                  </span>
+                </div>
+                <div class="tree-children is-hidden">
+                  <div class="tree-node leaf" role="treeitem">
+                    <span class="tree-toggle ghost">•</span>
+                    <span class="tree-label">Subcuenta 1</span>
+                    <span class="tree-actions">
+                      <button class="mini" data-modal="accEdit">Editar</button>
+                      <button class="mini" data-modal="accDisable">Deshabilitar</button>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Categorías (Treeview)</h3>
+              <div class="panel-actions">
+                <button class="btn btn-ghost" data-modal="catCreate">Nueva categoría</button>
+              </div>
+            </div>
+
+            <div class="tree" role="tree" aria-label="Categorías">
+              <div class="tree-node" role="treeitem" aria-expanded="true">
+                <button class="tree-toggle" aria-label="Expandir">▾</button>
+                <span class="tree-label"><span class="dot" style="background:#ff8b3d"></span> Gastos</span>
+                <span class="tree-actions">
+                  <button class="mini" data-modal="catEdit">Editar</button>
+                  <button class="mini" data-modal="catDisable">Deshabilitar</button>
+                </span>
+              </div>
+              <div class="tree-children">
+                <div class="tree-node leaf" role="treeitem">
+                  <span class="tree-toggle ghost">•</span>
+                  <span class="tree-label">Alimentación</span>
+                  <span class="tree-actions">
+                    <button class="mini" data-modal="catEdit">Editar</button>
+                    <button class="mini" data-modal="catDisable">Deshabilitar</button>
+                  </span>
+                </div>
+                <div class="tree-node leaf" role="treeitem">
+                  <span class="tree-toggle ghost">•</span>
+                  <span class="tree-label">Servicios</span>
+                  <span class="tree-actions">
+                    <button class="mini" data-modal="catEdit">Editar</button>
+                    <button class="mini" data-modal="catDisable">Deshabilitar</button>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
+      </section>
 
-        <div class="divider"></div>
+      <!-- Configuración -->
+      <section class="view" id="view-settings" data-view="settings">
+        <header class="view-head">
+          <h2>Configuración</h2>
+          <div class="view-actions">
+            <button class="btn btn-primary" data-modal="cfgSave">Guardar cambios</button>
+          </div>
+        </header>
 
-        <div class="row gap">
-          <button class="btn" data-modal-open="mMoveSplit">Agregar Split</button>
-          <button class="btn" data-modal-open="mMoveAudit">Ver auditoría (UI)</button>
+        <div class="grid2 gap">
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Preferencias</h3>
+            </div>
+
+            <div class="form">
+              <div class="field">
+                <label>Tema</label>
+                <div class="seg">
+                  <button class="seg-btn is-on" data-theme="finpro">Claro Pro</button>
+                  <button class="seg-btn" data-theme="finsoft">Claro Suave</button>
+                </div>
+              </div>
+
+              <div class="field">
+                <label>Moneda base</label>
+                <select>
+                  <option>CRC</option>
+                  <option>USD</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label>Moneda secundaria</label>
+                <select>
+                  <option>USD</option>
+                  <option>CRC</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label>Tipo de cambio por defecto (USD→CRC)</label>
+                <input type="number" step="0.01" placeholder="0.00" />
+              </div>
+
+              <div class="field">
+                <label>Menú</label>
+                <select>
+                  <option>Lateral</option>
+                  <option>Superior</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Utilidades</h3>
+            </div>
+
+            <div class="btn-row">
+              <button class="btn btn-ghost" data-modal="cfgBackup">Auto-backup</button>
+              <button class="btn btn-ghost" data-modal="cfgImport">Importar</button>
+              <button class="btn btn-ghost" data-modal="cfgExport">Exportar</button>
+              <button class="btn btn-warn" data-modal="cfgLoadBase">Cargar estructura base</button>
+              <button class="btn btn-warn" data-modal="cfgLoadDemo">Cargar demo</button>
+              <button class="btn btn-danger" data-modal="cfgReset">Reset completo</button>
+              <button class="btn btn-ghost" data-modal="cfgDiagnose">Diagnosticar y reparar</button>
+            </div>
+
+            <div class="note">
+              Estas opciones están descritas en el documento, se dejan como UI para fase 1.
+            </div>
+          </section>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Guardar</button>
-      </div>
-    </div>
-  </div>
+      </section>
+    </main>
 
-  <div class="modal hidden" id="mMoveEdit" role="dialog" aria-modal="true" aria-labelledby="mMoveEditTitle">
-    <div class="modal-card xl">
-      <div class="modal-header">
-        <h3 id="mMoveEditTitle">Editar movimiento</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p class="muted small">Mismo formulario que “Nuevo movimiento” (UI).</p>
-        <div class="actions">
-          <button class="btn" data-modal-open="mMoveNew">Abrir formulario</button>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cerrar</button>
-        <button class="btn primary" data-action="fakeOk">Guardar cambios</button>
-      </div>
-    </div>
-  </div>
+    <!-- Backdrop for mobile sidebar -->
+    <div class="backdrop" id="backdrop" hidden></div>
 
-  <div class="modal hidden" id="mMoveDelete" role="dialog" aria-modal="true" aria-labelledby="mMoveDeleteTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mMoveDeleteTitle">Eliminar movimiento</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p>Confirmación de eliminación (UI).</p>
-        <div class="warn">Si está relacionado con ahorros/conciliación puede afectar saldos (Fase 2).</div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn danger" data-action="fakeOk">Eliminar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mMoveSplit" role="dialog" aria-modal="true" aria-labelledby="mMoveSplitTitle">
-    <div class="modal-card xl">
-      <div class="modal-header">
-        <h3 id="mMoveSplitTitle">Split por categorías (UI)</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="table-wrap">
-          <table class="table">
-            <thead><tr><th>Categoría</th><th class="right">Monto</th><th class="right">Acción</th></tr></thead>
-            <tbody>
-              <tr>
-                <td><select><option>—</option></select></td>
-                <td class="right"><input type="number" step="0.01" value="0.00" /></td>
-                <td class="right"><button class="btn sm danger" data-action="fakeOk">Quitar</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="row gap">
-          <button class="btn" data-action="fakeOk">Agregar fila</button>
-          <div class="muted small">Total: 0.00 (UI)</div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Aplicar split</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mMoveAudit" role="dialog" aria-modal="true" aria-labelledby="mMoveAuditTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mMoveAuditTitle">Auditoría (UI)</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <ul class="list">
-          <li class="list-item">Creado por: —</li>
-          <li class="list-item">Última edición: —</li>
-          <li class="list-item">Conciliado: —</li>
-        </ul>
-      </div>
-      <div class="modal-footer">
-        <button class="btn primary" data-modal-close>Cerrar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Recurrentes -->
-  <div class="modal hidden" id="mRecurringNew" role="dialog" aria-modal="true" aria-labelledby="mRecurringNewTitle">
-    <div class="modal-card xl">
-      <div class="modal-header">
-        <h3 id="mRecurringNewTitle">Nuevo movimiento recurrente</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p class="muted small">UI base para luz/internet/salario, luego “Generar por mes”.</p>
-        <div class="actions">
-          <button class="btn" data-modal-open="mMoveNew">Usar formulario de movimiento</button>
-          <button class="btn" data-modal-open="mRecurringSchedule">Frecuencia</button>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cerrar</button>
-        <button class="btn primary" data-action="fakeOk">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mRecurringSchedule" role="dialog" aria-modal="true" aria-labelledby="mRecurringScheduleTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mRecurringScheduleTitle">Frecuencia recurrente (UI)</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="field">
-          <label>Frecuencia</label>
-          <select>
-            <option>Mensual</option>
-            <option>Quincenal</option>
-            <option>Semanal</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Día del mes</label>
-          <input type="number" min="1" max="31" value="1" />
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Aceptar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mRecurringGenerate" role="dialog" aria-modal="true" aria-labelledby="mRecurringGenerateTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mRecurringGenerateTitle">Generar recurrentes por mes</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="grid-2">
-          <div class="field"><label>Año</label><select><option>2026</option><option>2025</option></select></div>
-          <div class="field"><label>Mes</label><select><option>02</option><option>01</option></select></div>
-        </div>
-        <p class="hint">En Fase 2 generará movimientos reales para el periodo seleccionado.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Generar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Ahorros -->
-  <div class="modal hidden" id="mSavingsFilters" role="dialog" aria-modal="true" aria-labelledby="mSavingsFiltersTitle">
-    <div class="modal-card xl">
-      <div class="modal-header">
-        <h3 id="mSavingsFiltersTitle">Filtros de Ahorros</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="grid-3">
-          <div class="field"><label>Año</label><select><option>—</option><option>2026</option></select></div>
-          <div class="field"><label>Mes</label><select><option>—</option><option>02</option></select></div>
-          <div class="field"><label>Periodo</label><input placeholder="YYYY-MM" /></div>
-          <div class="field"><label>Tipo</label><select><option>—</option><option>Depósito</option><option>Retiro</option></select></div>
-          <div class="field"><label>Categoría</label><select><option>—</option></select></div>
-          <div class="field"><label>Meta</label><select><option>—</option></select></div>
-          <div class="field col-span-3"><label>Texto</label><input placeholder="buscar en descripción" /></div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Aplicar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mSavingsNew" role="dialog" aria-modal="true" aria-labelledby="mSavingsNewTitle">
-    <div class="modal-card xl">
-      <div class="modal-header">
-        <h3 id="mSavingsNewTitle">Nuevo ahorro</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="grid-3">
-          <div class="field"><label>Tipo</label><select><option>Depósito</option><option>Retiro</option></select></div>
-          <div class="field"><label>Fecha</label><input type="date" /></div>
-          <div class="field"><label>Periodo contable</label><input placeholder="YYYY-MM" /></div>
-          <div class="field"><label>Categoría (opcional)</label><select><option>—</option></select></div>
-          <div class="field"><label>Meta (opcional)</label><select><option>—</option></select></div>
-          <div class="field"><label>Monto</label><input type="number" step="0.01" placeholder="0.00" /></div>
-          <div class="field col-span-3"><label>Descripción</label><input placeholder="detalle" /></div>
-        </div>
-        <p class="hint">En Fase 2 se modela como transferencia con isSavings=true.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mSavingsEdit" role="dialog" aria-modal="true" aria-labelledby="mSavingsEditTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mSavingsEditTitle">Editar ahorro</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p class="muted small">Mismo formulario que “Nuevo ahorro” (UI).</p>
-        <button class="btn" data-modal-open="mSavingsNew">Abrir formulario</button>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cerrar</button>
-        <button class="btn primary" data-action="fakeOk">Guardar cambios</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mSavingsWithdraw" role="dialog" aria-modal="true" aria-labelledby="mSavingsWithdrawTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mSavingsWithdrawTitle">Retirar desde un registro</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="field"><label>Monto a retirar</label><input type="number" step="0.01" placeholder="0.00" /></div>
-        <div class="field"><label>Fecha</label><input type="date" /></div>
-        <div class="field"><label>Descripción</label><input placeholder="opcional" /></div>
-        <p class="hint">En Fase 2 validará saldo disponible y registrará retiro.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Retirar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mSavingsDelete" role="dialog" aria-modal="true" aria-labelledby="mSavingsDeleteTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mSavingsDeleteTitle">Eliminar ahorro</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p>Confirmación (UI).</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn danger" data-action="fakeOk">Eliminar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Metas -->
-  <div class="modal hidden" id="mGoals" role="dialog" aria-modal="true" aria-labelledby="mGoalsTitle">
-    <div class="modal-card xl">
-      <div class="modal-header">
-        <h3 id="mGoalsTitle">Metas de ahorro</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="row gap">
-          <button class="btn primary" data-modal-open="mGoalNew">Nueva meta</button>
-          <button class="btn" data-modal-open="mGoalEdit">Editar meta</button>
-          <button class="btn danger" data-modal-open="mGoalDelete">Eliminar meta</button>
-        </div>
-        <div class="table-wrap">
-          <table class="table">
-            <thead><tr><th>Nombre</th><th>Moneda</th><th class="right">Meta</th><th>Activa</th><th>Progreso (UI)</th></tr></thead>
-            <tbody>
-              <tr><td>—</td><td>CRC</td><td class="right">0.00</td><td>Sí</td><td><div class="progress"><div class="progress-bar" style="width:20%"></div></div></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn primary" data-modal-close>Cerrar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mGoalNew" role="dialog" aria-modal="true" aria-labelledby="mGoalNewTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mGoalNewTitle">Nueva meta</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="field"><label>Nombre</label><input placeholder="Meta" /></div>
-        <div class="field"><label>Moneda</label><select><option>CRC</option><option>USD</option></select></div>
-        <div class="field"><label>Monto meta</label><input type="number" step="0.01" placeholder="0.00" /></div>
-        <label class="row gap"><input type="checkbox" checked /> Activa</label>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mGoalEdit" role="dialog" aria-modal="true" aria-labelledby="mGoalEditTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mGoalEditTitle">Editar meta</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p class="muted small">Mismo formulario que “Nueva meta” (UI).</p>
-        <button class="btn" data-modal-open="mGoalNew">Abrir formulario</button>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cerrar</button>
-        <button class="btn primary" data-action="fakeOk">Guardar cambios</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mGoalDelete" role="dialog" aria-modal="true" aria-labelledby="mGoalDeleteTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mGoalDeleteTitle">Eliminar meta</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p>Confirmación (UI). En Fase 2 deberá validar relación con ahorros.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn danger" data-action="fakeOk">Eliminar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Presupuestos -->
-  <div class="modal hidden" id="mBudgetFilters" role="dialog" aria-modal="true" aria-labelledby="mBudgetFiltersTitle">
-    <div class="modal-card xl">
-      <div class="modal-header">
-        <h3 id="mBudgetFiltersTitle">Filtros Presupuestos</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="grid-3">
-          <div class="field"><label>Periodo</label><input placeholder="YYYY-MM" /></div>
-          <div class="field"><label>Tipo</label><select><option>—</option><option>Gasto</option><option>Ingreso</option></select></div>
-          <div class="field"><label>Categoría</label><select><option>—</option></select></div>
-          <div class="field"><label>Moneda</label><select><option>—</option><option>CRC</option><option>USD</option></select></div>
-          <div class="field"><label>Recurrente</label><select><option>—</option><option>Sí</option><option>No</option></select></div>
-          <div class="field"><label>Activo</label><select><option>—</option><option>Sí</option><option>No</option></select></div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Aplicar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mBudgetNew" role="dialog" aria-modal="true" aria-labelledby="mBudgetNewTitle">
-    <div class="modal-card xl">
-      <div class="modal-header">
-        <h3 id="mBudgetNewTitle">Nuevo presupuesto</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="grid-3">
-          <div class="field"><label>Periodo</label><input placeholder="YYYY-MM" /></div>
-          <div class="field"><label>Tipo</label><select><option>Gasto</option><option>Ingreso</option></select></div>
-          <div class="field"><label>Categoría</label><select><option>—</option></select></div>
-          <div class="field"><label>Monto presupuestado</label><input type="number" step="0.01" placeholder="0.00" /></div>
-          <div class="field"><label>Moneda</label><select><option>CRC</option><option>USD</option></select></div>
-          <div class="field"><label>Recurrente</label><select><option>No</option><option>Sí</option></select></div>
-          <label class="row gap col-span-3"><input type="checkbox" checked /> Activo</label>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mBudgetEdit" role="dialog" aria-modal="true" aria-labelledby="mBudgetEditTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mBudgetEditTitle">Editar presupuesto</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p class="muted small">Mismo formulario que “Nuevo presupuesto” (UI).</p>
-        <button class="btn" data-modal-open="mBudgetNew">Abrir formulario</button>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cerrar</button>
-        <button class="btn primary" data-action="fakeOk">Guardar cambios</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mBudgetDelete" role="dialog" aria-modal="true" aria-labelledby="mBudgetDeleteTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mBudgetDeleteTitle">Eliminar presupuesto</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body"><p>Confirmación (UI).</p></div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn danger" data-action="fakeOk">Eliminar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mBudgetRecurring" role="dialog" aria-modal="true" aria-labelledby="mBudgetRecurringTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mBudgetRecurringTitle">Presupuesto recurrente mensual (UI)</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p>UI para definir el “fallback” mensual si no hay presupuesto específico.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn primary" data-modal-close>Cerrar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Conciliaciones -->
-  <div class="modal hidden" id="mConFilters" role="dialog" aria-modal="true" aria-labelledby="mConFiltersTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mConFiltersTitle">Filtros Conciliaciones</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="grid-2">
-          <div class="field"><label>Cuenta</label><select><option>—</option></select></div>
-          <div class="field"><label>Periodo</label><input placeholder="YYYY-MM" /></div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Aplicar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mConNew" role="dialog" aria-modal="true" aria-labelledby="mConNewTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mConNewTitle">Nueva conciliación</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="field"><label>Cuenta</label><select><option>—</option></select></div>
-        <div class="grid-2">
-          <div class="field"><label>Año</label><select><option>2026</option></select></div>
-          <div class="field"><label>Mes</label><select><option>02</option></select></div>
-        </div>
-        <div class="field"><label>Saldo final banco</label><input type="number" step="0.01" placeholder="0.00" /></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Crear</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mConDetail" role="dialog" aria-modal="true" aria-labelledby="mConDetailTitle">
-    <div class="modal-card xl">
-      <div class="modal-header">
-        <h3 id="mConDetailTitle">Detalle conciliación (UI)</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="grid-3">
-          <div class="kpi"><span class="muted small">Final banco</span><strong>0.00</strong></div>
-          <div class="kpi"><span class="muted small">Final SGF</span><strong>0.00</strong></div>
-          <div class="kpi"><span class="muted small">Diferencia</span><strong>0.00</strong></div>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="table-wrap">
-          <table class="table">
-            <thead><tr><th>OK</th><th>Fecha</th><th>Descripción</th><th class="right">Monto</th></tr></thead>
-            <tbody>
-              <tr>
-                <td><input type="checkbox" /></td>
-                <td>—</td>
-                <td>—</td>
-                <td class="right">0.00</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="row gap">
-          <button class="btn" data-modal-open="mConClose">Cerrar mes</button>
-          <button class="btn" data-modal-open="mConReopen">Reabrir mes</button>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn primary" data-modal-close>Cerrar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mConClose" role="dialog" aria-modal="true" aria-labelledby="mConCloseTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mConCloseTitle">Cerrar conciliación</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p>Al cerrar, se restringen cambios (Fase 2). UI de confirmación.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Cerrar mes</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mConReopen" role="dialog" aria-modal="true" aria-labelledby="mConReopenTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mConReopenTitle">Reabrir conciliación</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p>UI de confirmación.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Reabrir</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mConDelete" role="dialog" aria-modal="true" aria-labelledby="mConDeleteTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mConDeleteTitle">Eliminar conciliación</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body"><p>Confirmación (UI).</p></div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn danger" data-action="fakeOk">Eliminar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mConExportCsv" role="dialog" aria-modal="true" aria-labelledby="mConExportCsvTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mConExportCsvTitle">Exportar CSV conciliaciones (UI)</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p>UI para exportar conciliaciones a CSV.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn primary" data-modal-close>Cerrar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Catálogos: Cuentas -->
-  <div class="modal hidden" id="mAccNew" role="dialog" aria-modal="true" aria-labelledby="mAccNewTitle">
-    <div class="modal-card xl">
-      <div class="modal-header">
-        <h3 id="mAccNewTitle">Nueva cuenta</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="grid-3">
-          <div class="field"><label>Nombre</label><input placeholder="Cuenta" /></div>
-          <div class="field"><label>Tipo</label><select><option>Banco</option><option>Tarjeta</option><option>Ahorros</option></select></div>
-          <div class="field"><label>Padre</label><select><option>—</option></select></div>
-          <div class="field"><label>Moneda</label><select><option>CRC</option><option>USD</option></select></div>
-          <div class="field"><label>Color</label><input type="color" value="#2b6cff" /></div>
-          <div class="field"><label>Saldo inicial</label><input type="number" step="0.01" placeholder="0.00" /></div>
-          <label class="row gap"><input type="checkbox" checked /> Activa</label>
-          <label class="row gap"><input type="checkbox" /> Permite saldo negativo</label>
-        </div>
-        <p class="hint">No permitir eliminar si está “en uso” (Fase 2). UI.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mAccEdit" role="dialog" aria-modal="true" aria-labelledby="mAccEditTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mAccEditTitle">Editar cuenta</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p class="muted small">Mismo formulario que “Nueva cuenta” (UI).</p>
-        <button class="btn" data-modal-open="mAccNew">Abrir formulario</button>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cerrar</button>
-        <button class="btn primary" data-action="fakeOk">Guardar cambios</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mAccDisable" role="dialog" aria-modal="true" aria-labelledby="mAccDisableTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mAccDisableTitle">Deshabilitar cuenta</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body"><p>Confirmación (UI).</p></div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Deshabilitar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mAccDelete" role="dialog" aria-modal="true" aria-labelledby="mAccDeleteTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mAccDeleteTitle">Eliminar cuenta</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body"><p>Confirmación (UI). En Fase 2 validará “en uso”.</p></div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn danger" data-action="fakeOk">Eliminar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mAccColors" role="dialog" aria-modal="true" aria-labelledby="mAccColorsTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mAccColorsTitle">Regenerar colores (UI)</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body"><p>UI para recalcular colores por jerarquía.</p></div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Aplicar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mAccTree" role="dialog" aria-modal="true" aria-labelledby="mAccTreeTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mAccTreeTitle">Vista árbol cuentas (UI)</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body"><p>Solo UI (expandir/contraer en Fase 2).</p></div>
-      <div class="modal-footer">
-        <button class="btn primary" data-modal-close>Cerrar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Catálogos: Tipos -->
-  <div class="modal hidden" id="mTypeNew" role="dialog" aria-modal="true" aria-labelledby="mTypeNewTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mTypeNewTitle">Nuevo tipo de cuenta</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="field"><label>Nombre</label><input placeholder="Ej: Inversión" /></div>
-        <p class="hint">En Fase 2: no permitir eliminar base o en uso.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mTypeEdit" role="dialog" aria-modal="true" aria-labelledby="mTypeEditTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mTypeEditTitle">Editar tipo de cuenta</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p class="muted small">Mismo formulario que “Nuevo tipo” (UI).</p>
-        <button class="btn" data-modal-open="mTypeNew">Abrir formulario</button>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cerrar</button>
-        <button class="btn primary" data-action="fakeOk">Guardar cambios</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mTypeDelete" role="dialog" aria-modal="true" aria-labelledby="mTypeDeleteTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mTypeDeleteTitle">Eliminar tipo de cuenta</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body"><p>Confirmación (UI). En Fase 2 bloqueará base/en uso.</p></div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn danger" data-action="fakeOk">Eliminar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Categorías -->
-  <div class="modal hidden" id="mCatNew" role="dialog" aria-modal="true" aria-labelledby="mCatNewTitle">
-    <div class="modal-card xl">
-      <div class="modal-header">
-        <h3 id="mCatNewTitle">Nueva categoría</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="grid-3">
-          <div class="field"><label>Nombre</label><input placeholder="Categoría" /></div>
-          <div class="field"><label>Padre</label><select><option>—</option></select></div>
-          <div class="field"><label>Color</label><input type="color" value="#00b37e" /></div>
-          <label class="row gap"><input type="checkbox" checked /> Activa</label>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mCatEdit" role="dialog" aria-modal="true" aria-labelledby="mCatEditTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mCatEditTitle">Editar categoría</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p class="muted small">Mismo formulario que “Nueva categoría” (UI).</p>
-        <button class="btn" data-modal-open="mCatNew">Abrir formulario</button>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cerrar</button>
-        <button class="btn primary" data-action="fakeOk">Guardar cambios</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mCatDisable" role="dialog" aria-modal="true" aria-labelledby="mCatDisableTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mCatDisableTitle">Deshabilitar categoría</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body"><p>Confirmación (UI).</p></div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Deshabilitar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mCatDelete" role="dialog" aria-modal="true" aria-labelledby="mCatDeleteTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mCatDeleteTitle">Eliminar categoría</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body"><p>Confirmación (UI). En Fase 2 validará “en uso”.</p></div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn danger" data-action="fakeOk">Eliminar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mCatTree" role="dialog" aria-modal="true" aria-labelledby="mCatTreeTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mCatTreeTitle">Vista árbol categorías (UI)</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body"><p>Solo UI (expandir/contraer en Fase 2).</p></div>
-      <div class="modal-footer">
-        <button class="btn primary" data-modal-close>Cerrar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Configuración -->
-  <div class="modal hidden" id="mConfigTheme" role="dialog" aria-modal="true" aria-labelledby="mConfigThemeTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mConfigThemeTitle">Tema</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="row gap">
-          <button class="btn" data-action="setTheme" data-theme="finpro">Claro Pro</button>
-          <button class="btn" data-action="setTheme" data-theme="finsoft">Claro Suave</button>
-        </div>
-        <p class="hint">En Fase 2 se persistirá en config (IndexedDB).</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn primary" data-modal-close>Cerrar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mConfigFxHistory" role="dialog" aria-modal="true" aria-labelledby="mConfigFxHistoryTitle">
-    <div class="modal-card xl">
-      <div class="modal-header">
-        <h3 id="mConfigFxHistoryTitle">Histórico tipo de cambio (UI)</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="row gap">
-          <button class="btn">Agregar</button>
-          <button class="btn">Editar</button>
-          <button class="btn danger">Eliminar</button>
-        </div>
-        <div class="table-wrap">
-          <table class="table">
-            <thead><tr><th>Fecha</th><th class="right">USD→CRC</th><th>Notas</th></tr></thead>
-            <tbody><tr><td>—</td><td class="right">0.00</td><td>—</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn primary" data-modal-close>Cerrar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mConfigSavingsDefaults" role="dialog" aria-modal="true" aria-labelledby="mConfigSavingsDefaultsTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mConfigSavingsDefaultsTitle">Cuentas de ahorro predeterminadas (UI)</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body form">
-        <div class="field"><label>Cuenta ahorro CRC</label><select><option>—</option></select></div>
-        <div class="field"><label>Cuenta ahorro USD</label><select><option>—</option></select></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mResetAll" role="dialog" aria-modal="true" aria-labelledby="mResetAllTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mResetAllTitle">Reset completo</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body">
-        <p>UI para “reset total” del sistema.</p>
-        <div class="warn">Acción destructiva.</div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn danger" data-action="fakeOk">Reset</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mLoadBase" role="dialog" aria-modal="true" aria-labelledby="mLoadBaseTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mLoadBaseTitle">Cargar estructura base (UI)</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body"><p>UI para cargar estructura inicial.</p></div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Cargar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mLoadDemo" role="dialog" aria-modal="true" aria-labelledby="mLoadDemoTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mLoadDemoTitle">Cargar demo (UI)</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body"><p>UI para cargar datos demo.</p></div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Cargar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal hidden" id="mRepair" role="dialog" aria-modal="true" aria-labelledby="mRepairTitle">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="mRepairTitle">Diagnosticar y reparar (UI)</h3>
-        <button class="btn ghost" data-modal-close>✕</button>
-      </div>
-      <div class="modal-body"><p>UI para diagnóstico de DB local.</p></div>
-      <div class="modal-footer">
-        <button class="btn" data-modal-close>Cancelar</button>
-        <button class="btn primary" data-action="fakeOk">Ejecutar</button>
-      </div>
-    </div>
+    <!-- MODAL HOST -->
+    <div class="modal-host" id="modalHost" aria-live="polite"></div>
   </div>
 
   <script src="app.js"></script>
