@@ -12,6 +12,13 @@ const SGF_ROUTES = {
   categorias: { title: 'Categorías', view: 'catalogos-categorias.html' },
   reportes_resumen_cuentas: { title: 'Reportes · Resumen por cuentas', view: 'reportes-resumen-cuentas.html' },
   reportes_resumen_categorias: { title: 'Reportes · Resumen por categorías', view: 'reportes-resumen-categorias.html' },
+  reportes_estado_resultados: { title: 'Reportes · Estado de Resultados', view: 'reportes-estado-resultados.html' },
+  reportes_flujo_caja: { title: 'Reportes · Flujo de Caja', view: 'reportes-flujo-caja.html' },
+  reportes_presupuesto_vs_real: { title: 'Reportes · Presupuesto vs Real', view: 'reportes-presupuesto-vs-real.html' },
+  reportes_tendencias_12m: { title: 'Reportes · Tendencias (12 meses)', view: 'reportes-tendencias-12m.html' },
+  reportes_insights: { title: 'Reportes · Insights', view: 'reportes-insights.html' },
+  reportes_comparativo_mes: { title: 'Reportes · Comparativo Mes a Mes', view: 'reportes-comparativo-mes.html' },
+  reportes_balance_cuentas: { title: 'Reportes · Balance por Cuenta', view: 'reportes-balance-cuentas.html' },
   config: { title: 'Configuración', view: 'config.html' },
 };
 

@@ -1,4 +1,4 @@
-// Mantenimiento de datos (v1.17.1)
+// Mantenimiento de datos (v1.27.0)
 // - Reset completo (recrear bóveda del usuario actual)
 // - Cargar base (tipos + cuentas base + ahorros predeterminados)
 // - Cargar demo (base + categorías + presupuestos + conciliaciones + movimientos + ahorros)
@@ -33,6 +33,53 @@
     base.forEach(n => run('INSERT OR IGNORE INTO account_types(name,is_base,active) VALUES (:n,1,1)', { ':n': n }));
   } catch (_) {}
 }
+
+  // v1.23.0 demo generator helpers
+  const DEMO_SEED = 2300;
+  function makeRng(seed){
+    let s = seed >>> 0;
+    return function(){
+      // xorshift32
+      s ^= (s << 13) >>> 0;
+      s ^= (s >> 17) >>> 0;
+      s ^= (s << 5) >>> 0;
+      return (s >>> 0) / 4294967296;
+    };
+  }
+
+  function ymFromDate(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    return `${y}-${m}`;
+  }
+
+  function addMonths(ym, delta){
+    const [y,m]=String(ym).split('-').map(Number);
+    const dt = new Date(y, m-1+delta, 1);
+    return ymFromDate(dt);
+  }
+
+  function ymToDate(ym, day){
+    const [y,m]=String(ym).split('-');
+    const dd = String(day).padStart(2,'0');
+    return `${y}-${m}-${dd}`;
+  }
+
+  function hasCol(table, col){
+    try{
+      const rows = window.SGF.db.select(`PRAGMA table_info(${table})`);
+      return (rows||[]).some(r => String(r.name||'').toLowerCase() === String(col).toLowerCase());
+    }catch(_){ return false; }
+  }
+
+  const DEMO_MERCHANTS = [
+    'Walmart','AutoMercado','MasxMenos','Pricesmart','Uber','Didi','PedidosYa','Amazon','Netflix','Spotify',
+    'Farmacia Fischel','La Bomba','Shell','Puma','KFC','McDonalds','Burger King','Subway','Cinepolis','Kolbi',
+    'ICE','AyA','CNFL','BAC','BCR','INS','CoopeAnde','Taco Bell','Papa Johns','Spoon'
+  ];
+  const DEMO_DESC = ['Compra','Pago','Suscripción','Recibo','Servicio','Pedido','Orden','Factura'];
+  function pick(arr, rng){ return arr[Math.floor(rng()*arr.length)]; }
+
 
   function ensureConfigKey(key, value) {
     run('INSERT OR IGNORE INTO config(key,value) VALUES (:k,:v)', { ':k': key, ':v': String(value ?? '') });
@@ -586,7 +633,6 @@ function loadDemoCategories() {
       const accountId = (tpl.type === 'income' && acc.name.includes('Walmart')) ? aBAC : acc.id;
       ins(tpl.type, date, accountId, amt, tpl.cat, tpl.desc);
     }
-
     // 3 transferencias
     if (walletId && aBAC) {
       ins('transfer', '2026-02-02', aBAC, 20000, null, 'Efectivo (demo)', walletId);
@@ -628,7 +674,7 @@ function loadDemoCategories() {
       try { recomputeFxDerived(); } catch (e) { console.warn(e); }
 
       await window.SGF.db.save();
-      toast('Demo cargada. Tip: BAC Colones (2026-02) está CERRADO; BAC Colones (2026-01) está ABIERTO.');
+      toast('Demo cargada (XL): 14 meses de movimientos + 10 meses de ahorros + 8 meses de presupuestos + conciliaciones.');
       // refrescar módulos si están montados
       window.SGF?.closureGuard?.invalidate?.();
       try { window.SGF.modules?.movimientos?.onMount?.(); } catch (_) {}
@@ -704,7 +750,11 @@ function loadDemoCategories() {
       const base = Number(round2(amt * Number(toBase || 0)));
 
       upd.bind({ ':cur': cur, ':fx': Number(fx || 1), ':amt_to': amtTo, ':base': base, ':u': t, ':id': id });
-      upd.step();
+      try { upd.step(); } catch (e) {
+        const msg = String(e && (e.message || e)).toUpperCase();
+        if (msg.includes('MONTH_CLOSED')) { upd.reset(); return; }
+        throw e;
+      }
       upd.reset();
       updated += 1;
     });

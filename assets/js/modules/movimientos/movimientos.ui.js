@@ -99,7 +99,21 @@ window.SGF.modules = window.SGF.modules || {};
     return Math.round(num * 100) / 100;
   }
 
-  function formatMoney(amount, currency) {
+  
+  // v1.25.0: helper para tasas / valores con 6 decimales (evita ReferenceError)
+  function formatNumber6(n) {
+    const num = Number(n || 0);
+    try {
+      return new Intl.NumberFormat('es-CR', {
+        minimumFractionDigits: 6,
+        maximumFractionDigits: 6,
+      }).format(num);
+    } catch (_) {
+      try { return num.toFixed(6); } catch(_) { return String(n ?? ''); }
+    }
+  }
+
+function formatMoney(amount, currency) {
     const n = Number(amount || 0);
     const cur = currency === 'USD' ? 'USD' : 'CRC';
     try {

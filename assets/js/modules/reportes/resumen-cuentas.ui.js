@@ -203,7 +203,7 @@ window.SGF.modules = window.SGF.modules || {};
   function renderHierarchy({ tbody, rows, currency, expandedTypes, order = 'desc', expandAll = false, tipo = 'expense' }) {
     const groups = new Map();
     for (const r of rows) {
-      const k = String(r.typeName || 'Sin tipo');
+      const k = String(r.typeName || 'Sin tipo').trim();
       if (!groups.has(k)) groups.set(k, []);
       groups.get(k).push(r);
     }
@@ -230,7 +230,7 @@ window.SGF.modules = window.SGF.modules || {};
     }
 
     for (const g of groupArr) {
-      const typeName = g.typeName;
+      const typeName = String(g.typeName || 'Sin tipo').trim();
       const list = g.list;
 
       const isExp = expandedTypes.has(typeName);
@@ -310,6 +310,7 @@ window.SGF.modules = window.SGF.modules || {};
         else expandedTypes.add(t);
         
         if (window.SGF.__repAccState) window.SGF.__repAccState.expandAll = false;
+        window.SGF.__repAccSaveState && window.SGF.__repAccSaveState();
         window.SGF.__repAccRender && window.SGF.__repAccRender();
       });
     });
@@ -317,12 +318,13 @@ window.SGF.modules = window.SGF.modules || {};
     tbody.querySelectorAll('tr[data-kind="parent"]').forEach(tr => {
       tr.addEventListener('click', (e) => {
         e.preventDefault(); e.stopPropagation();
-        const t = decodeURIComponent(tr.getAttribute('data-key') || '') || '';
+        const t = (decodeURIComponent(tr.getAttribute('data-key') || '') || '').trim();
         if (!t) return;
         if (expandedTypes.has(t)) expandedTypes.delete(t);
         else expandedTypes.add(t);
         
         if (window.SGF.__repAccState) window.SGF.__repAccState.expandAll = false;
+        window.SGF.__repAccSaveState && window.SGF.__repAccSaveState();
         window.SGF.__repAccRender && window.SGF.__repAccRender();
       });
     });
@@ -331,6 +333,7 @@ window.SGF.modules = window.SGF.modules || {};
   }
 
   function onMount() {
+    const STORE_KEY = 'reportes_resumen_cuentas';
     const yearEl = document.getElementById('rep-year');
     const monthEl = document.getElementById('rep-month');
     const curEl = document.getElementById('rep-currency');
@@ -386,12 +389,14 @@ window.SGF.modules = window.SGF.modules || {};
       typEl = document.getElementById('rep-type');
       expandBtn = document.getElementById('rep-expand-btn');
       collapseBtn = document.getElementById('rep-collapse-btn');
+      __typEl = typEl; __orderEl = orderEl;
     }
 
 
     if (!yearEl || !monthEl || !curEl || !accEl || !tbody) return;
 
     ensureExtraFilters();
+    __typEl = typEl; __orderEl = orderEl;
 
     // Populate selects
     const years = loadYears();
@@ -411,7 +416,7 @@ window.SGF.modules = window.SGF.modules || {};
     refreshAccounts();
     if (typEl && !typEl.value) typEl.value = 'expense';
 
-    const expandedTypes = new Set(); // CONTRAÍDO por defecto
+    const expandedTypes = window.SGF.__repAccInitExpanded ? new Set(Array.from(window.SGF.__repAccInitExpanded)) : new Set(); // CONTRAÍDO por defecto
 
     const refresh = (E?.debounce || debounce)(() => {
       const f0 = (E?.readCommonFilters ? E.readCommonFilters({ prefix: 'rep' }) : null);
@@ -458,7 +463,7 @@ window.SGF.modules = window.SGF.modules || {};
       const dir = (order === 'asc') ? 1 : -1;
       const byType = new Map();
       for (const r of rows) {
-        const k = String(r.typeName || 'Sin tipo');
+        const k = String(r.typeName || 'Sin tipo').trim();
         if (!byType.has(k)) byType.set(k, []);
         byType.get(k).push(r);
       }
@@ -477,7 +482,7 @@ window.SGF.modules = window.SGF.modules || {};
       for (const [, list] of orderedTypes) orderedRows.push(...list);
       // Expandir/contraer: controlado por expandedTypes (botones)
 
-      window.SGF.__repAccState = { tbody, orderedRows, currency, expandedTypes, order: order, expandAll: false, tipo, range, rangeLabel: labelRange, allKeys: orderedTypes.map(x=>String(x[0])) };
+      window.SGF.__repAccState = { tbody, orderedRows, currency, expandedTypes, order: order, expandAll: false, tipo, range, rangeLabel: labelRange, allKeys: orderedTypes.map(x=>String(x[0]).trim()) };
       window.SGF.__repAccRender = () => {
         const s = window.SGF.__repAccState;
         if (!s) return;
@@ -499,14 +504,16 @@ window.SGF.modules = window.SGF.modules || {};
     expandBtn && expandBtn.addEventListener('click', () => {
       if (!window.SGF.__repAccState) return;
       window.SGF.__repAccState.expandAll = true;
-      window.SGF.__repAccRender && window.SGF.__repAccRender();
+      saveState();
+        window.SGF.__repAccRender && window.SGF.__repAccRender();
       try { window.lucide && window.lucide.createIcons && window.lucide.createIcons(); } catch(_){}
     });
     collapseBtn && collapseBtn.addEventListener('click', () => {
       if (!window.SGF.__repAccState) return;
       window.SGF.__repAccState.expandAll = false;
       window.SGF.__repAccState.expandedTypes && window.SGF.__repAccState.expandedTypes.clear();
-      window.SGF.__repAccRender && window.SGF.__repAccRender();
+      saveState();
+        window.SGF.__repAccRender && window.SGF.__repAccRender();
       try { window.lucide && window.lucide.createIcons && window.lucide.createIcons(); } catch(_){}
     });
     typEl && typEl.addEventListener('change', refresh);
@@ -520,6 +527,7 @@ window.SGF.modules = window.SGF.modules || {};
         if (!s) return;
         s.expandedTypes.clear();
         for (const k of (s.allKeys || [])) s.expandedTypes.add(String(k));
+        saveState();
         window.SGF.__repAccRender && window.SGF.__repAccRender();
         try { window.lucide?.createIcons?.(); } catch(_){}
       },
@@ -527,6 +535,7 @@ window.SGF.modules = window.SGF.modules || {};
         const s = window.SGF.__repAccState;
         if (!s) return;
         s.expandedTypes.clear();
+        saveState();
         window.SGF.__repAccRender && window.SGF.__repAccRender();
         try { window.lucide?.createIcons?.(); } catch(_){}
       },
@@ -536,12 +545,13 @@ window.SGF.modules = window.SGF.modules || {};
     E && E.wireDelegatedToggles({
       tbody,
       toggleSelector: '.racc-toggle, tr[data-kind="parent"][data-key]',
-      getKey: (el) => decodeURIComponent(el.getAttribute('data-key') || ''),
+      getKey: (el) => (decodeURIComponent(el.getAttribute('data-key') || '') || '').trim(),
       onToggle: (key) => {
         const s = window.SGF.__repAccState;
         if (!s || !key) return;
         if (s.expandedTypes.has(key)) s.expandedTypes.delete(key);
         else s.expandedTypes.add(key);
+        saveState();
         window.SGF.__repAccRender && window.SGF.__repAccRender();
         try { window.lucide?.createIcons?.(); } catch(_){}
       }
@@ -576,7 +586,8 @@ window.SGF.modules = window.SGF.modules || {};
       } else {
         s.expandedTypes.clear();
       }
-      window.SGF.__repAccRender && window.SGF.__repAccRender();
+      saveState();
+        window.SGF.__repAccRender && window.SGF.__repAccRender();
       try { window.lucide?.createIcons?.(); } catch(_){}
     }
     expandBtn && expandBtn.addEventListener('click', () => repAccApplyExpand('expand'));
@@ -592,11 +603,12 @@ window.SGF.modules = window.SGF.modules || {};
         if (toggle) {
           e.preventDefault();
           e.stopPropagation();
-          const key = decodeURIComponent(toggle.getAttribute('data-key') || '') || '';
+          const key = (decodeURIComponent(toggle.getAttribute('data-key') || '') || '').trim();
           if (!key) return;
           if (s.expandedTypes.has(key)) s.expandedTypes.delete(key);
           else s.expandedTypes.add(key);
-          window.SGF.__repAccRender && window.SGF.__repAccRender();
+          saveState();
+        window.SGF.__repAccRender && window.SGF.__repAccRender();
           try { window.lucide?.createIcons?.(); } catch(_){}
           return;
         }
@@ -620,7 +632,7 @@ window.SGF.modules = window.SGF.modules || {};
     
 
     // Persistencia de filtros
-    const saved = E?.loadFilters ? E.loadFilters('rep_accounts') : null;
+    const saved = E?.loadFilters ? E.loadFilters(STORE_KEY) : null;
     if (saved){
       E.setSelectValueIfExists && E.setSelectValueIfExists(yearEl, saved.year);
       E.setSelectValueIfExists && E.setSelectValueIfExists(monthEl, saved.month);
@@ -629,6 +641,26 @@ window.SGF.modules = window.SGF.modules || {};
       E.setSelectValueIfExists && E.setSelectValueIfExists(typEl, saved.type);
       E.setSelectValueIfExists && E.setSelectValueIfExists(orderEl, saved.order);
     }
+
+    function saveState(){
+      try{
+        const s = window.SGF.__repAccState;
+        const expandedTypes = s?.expandedTypes ? (E?.serializeSet ? E.serializeSet(s.expandedTypes) : Array.from(s.expandedTypes)) : undefined;
+        E?.saveFilters && E.saveFilters(STORE_KEY, {
+          year: yearEl?.value,
+          month: monthEl?.value,
+          currency: curEl?.value,
+          accountId: accEl?.value,
+          type: typEl?.value,
+          order: orderEl?.value,
+          expandedTypes,
+        });
+      }catch(_){}
+    }
+
+    // expose to renderHierarchy
+    window.SGF.__repAccSaveState = saveState;
+
 
     refresh();
   }

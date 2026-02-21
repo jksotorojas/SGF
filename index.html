@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SGF v1.20.16 - Sistema de Gestión Financiera</title>
+  <title>SGF v1.28.6 - Sistema de Gestión Financiera</title>
   <!-- Tailwind CSS (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -109,6 +109,27 @@
             </a>
             <a href="#" onclick="showSection('reportes_resumen_categorias')" class="block p-2 rounded-lg hover:bg-slate-800 transition text-sm">
               Resumen por categorías
+            </a>
+            <a href="#" onclick="showSection('reportes_estado_resultados')" class="block p-2 rounded-lg hover:bg-slate-800 transition text-sm">
+              Estado de Resultados
+            </a>
+            <a href="#" onclick="showSection('reportes_flujo_caja')" class="block p-2 rounded-lg hover:bg-slate-800 transition text-sm">
+              Flujo de Caja
+            </a>
+            <a href="#" onclick="showSection('reportes_presupuesto_vs_real')" class="block p-2 rounded-lg hover:bg-slate-800 transition text-sm">
+              Presupuesto vs Real
+            </a>
+            <a href="#" onclick="showSection('reportes_tendencias_12m')" class="block p-2 rounded-lg hover:bg-slate-800 transition text-sm">
+              Tendencias (12 meses)
+            </a>
+            <a href="#" onclick="showSection('reportes_insights')" class="block p-2 rounded-lg hover:bg-slate-800 transition text-sm">
+              Insights
+            </a>
+            <a href="#" onclick="showSection('reportes_comparativo_mes')" class="block p-2 rounded-lg hover:bg-slate-800 transition text-sm">
+              Comparativo Mes a Mes
+            </a>
+            <a href="#" onclick="showSection('reportes_balance_cuentas')" class="block p-2 rounded-lg hover:bg-slate-800 transition text-sm">
+              Balance por Cuenta
             </a>
           </div>
         </div>
@@ -954,6 +975,13 @@
   <script src="assets/js/modules/reportes/reports.drilldown.js"></script>
   <script src="assets/js/modules/reportes/resumen-cuentas.ui.js"></script>
   <script src="assets/js/modules/reportes/resumen-categorias.ui.js"></script>
+  <script src="assets/js/modules/reportes/estado-resultados.ui.js"></script>
+  <script src="assets/js/modules/reportes/flujo-caja.ui.js"></script>
+  <script src="assets/js/modules/reportes/presupuesto-vs-real.ui.js"></script>
+  <script src="assets/js/modules/reportes/tendencias-12m.ui.js"></script>
+  <script src="assets/js/modules/reportes/insights.ui.js"></script>
+  <script src="assets/js/modules/reportes/comparativo-mes.ui.js"></script>
+  <script src="assets/js/modules/reportes/balance-cuentas.ui.js"></script>
   <script src="assets/js/modules/movimientos/movimientos.ui.js"></script>
   <script src="assets/js/modules/ahorros/ahorros.ui.js"></script>
   <script src="assets/js/modules/presupuestos/presupuestos.ui.js"></script>

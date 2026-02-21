@@ -483,7 +483,10 @@ function ensureReconciliationClosedTriggers() {
       baseAmt = (toBase > 0) ? round2(amt * toBase) : (cur === baseCur ? round2(amt) : 0);
 
       upd.bind({ ':cur': cur || accCur, ':fx': Number(fx || 1), ':amt_to': amtTo, ':base': baseAmt, ':u': now, ':id': id });
-      upd.step();
+      try { upd.step(); } catch (e) {
+        const msg = String(e && (e.message || e)).toUpperCase();
+        if (!msg.includes('MONTH_CLOSED')) throw e;
+      }
       upd.reset();
     });
 
@@ -600,7 +603,14 @@ function ensureReconciliationClosedTriggers() {
     try { ensureReconciliationClosedTriggers(); } catch (e) { console.warn('ensureReconciliationClosedTriggers', e); }
 
     // v1.16: derivar base_amount/currency para datos existentes
-    try { recomputeV116FxDerivedIfNeeded(); } catch (e) { console.warn('FX recompute', e); }
+    try { recomputeV116FxDerivedIfNeeded(); } catch (e) {
+      const msg = String(e && (e.message || e)).toUpperCase();
+      if (msg.includes('MONTH_CLOSED')) {
+        // ignorar: no recalcular en meses cerrados
+      } else {
+        console.warn('FX recompute', e);
+      }
+    }
 
     // Persistir si hubo cambios
     try { await window.SGF.db?.save?.(); } catch (_) {}
