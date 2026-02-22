@@ -439,6 +439,7 @@ window.SGF.modules = window.SGF.modules || {};
       const selected = accountId > 0 ? list.filter(a => String(a.id) === String(accountId)) : list;
 
       const rows = [];
+    let grandTotal = 0;
 
       function rowMetric(r){
         if (tipo === 'expense') return Math.abs(Number(r.expense||0));

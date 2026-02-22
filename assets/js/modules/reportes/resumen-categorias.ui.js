@@ -1,4 +1,4 @@
-// v1.22.0 - Reportes: Resumen por categorías (fix schema sin is_deleted)
+// v1.29.1 - Reportes: Resumen por categorías (totales pie de tabla)
 window.SGF = window.SGF || {};
 window.SGF.modules = window.SGF.modules || {};
 
@@ -118,7 +118,7 @@ window.SGF.modules = window.SGF.modules || {};
     return { label, whereSql, params };
   }
 
-  function render({ roots, expanded, denom, currency, order }){
+  function render({ roots, expanded, denom, currency, order, totalRaw }){
     const tbody = $('rcat-tbody');
     if (!tbody) return;
 
@@ -159,7 +159,19 @@ window.SGF.modules = window.SGF.modules || {};
 
     for (const r of roots) row(r, 0);
 
-    tbody.innerHTML = rowsHtml.join('') || `
+
+    // Total (sin duplicar padres): usar totalRaw
+    const totalRow = `
+      <tr class="bg-slate-50">
+        <td class="py-2 px-2 font-semibold text-slate-800">Total</td>
+        <td class="py-2 px-2 text-right tabular-nums font-semibold ${cls(totalRaw)}">${esc(fmt(totalRaw))}</td>
+        <td class="py-2 px-2 text-right tabular-nums text-slate-500">100.00%</td>
+      </tr>
+    `;
+
+
+
+    tbody.innerHTML = (rowsHtml.length ? (rowsHtml.join('') + totalRow) : '') || `
       <tr><td class="py-4 px-3 text-slate-500" colspan="3">Sin datos.</td></tr>
     `;
 
@@ -261,7 +273,11 @@ window.SGF.modules = window.SGF.modules || {};
 
       // denom as abs sum of raw (not rollup): unc + abs of each byId (cid!=0)
       let denom = Math.abs(Number(byId.get(0)||0));
-      for (const [cid, amt] of byId.entries()) if (cid !== 0) denom += Math.abs(Number(amt||0));
+      let totalRaw = Number(byId.get(0)||0);
+      for (const [cid, amt] of byId.entries()) {
+        if (cid !== 0) denom += Math.abs(Number(amt||0));
+        if (cid !== 0) totalRaw += Number(amt||0);
+      }
 
       // cleanup expanded invalid + calcular nodos expandibles
       const valid = new Set();
@@ -276,7 +292,7 @@ window.SGF.modules = window.SGF.modules || {};
       state.__parents = parents;
       for (const id of Array.from(state.expanded)) if (!valid.has(id)) state.expanded.delete(id);
 
-      render({ roots: treeRoots, expanded: state.expanded, denom, currency: curEl.value, order: ordEl.value });
+      render({ roots: treeRoots, expanded: state.expanded, denom, totalRaw, currency: curEl.value, order: ordEl.value });
     }
 
     // wiring

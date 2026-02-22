@@ -644,10 +644,10 @@ return {
       db.run('DELETE FROM movement_splits WHERE movement_id=:id', { ':id': Number(movementId) });
       if (m.is_split) {
         const stmt = window.SGF.sqlDb.prepare(
-          'INSERT INTO movement_splits(movement_id,category_id,amount) VALUES (:m,:c,:a)'
+          'INSERT INTO movement_splits(movement_id,category_id,amount,created_at) VALUES (:m,:c,:a,:cr)'
         );
         m.splits.forEach(s => {
-          stmt.bind({ ':m': Number(movementId), ':c': Number(s.category_id), ':a': Number(s.amount) });
+          stmt.bind({ ':m': Number(movementId), ':c': Number(s.category_id), ':a': Number(s.amount), ':cr': now });
           stmt.step();
           stmt.reset();
         });
@@ -681,10 +681,10 @@ return {
         const newId = Number(db.scalar('SELECT last_insert_rowid() AS id') || 0);
         if (m.is_split && newId) {
           const stmt = window.SGF.sqlDb.prepare(
-            'INSERT INTO movement_splits(movement_id,category_id,amount) VALUES (:m,:c,:a)'
+            'INSERT INTO movement_splits(movement_id,category_id,amount,created_at) VALUES (:m,:c,:a,:cr)'
           );
           m.splits.forEach(s => {
-            stmt.bind({ ':m': newId, ':c': Number(s.category_id), ':a': Number(s.amount) });
+            stmt.bind({ ':m': newId, ':c': Number(s.category_id), ':a': Number(s.amount), ':cr': now });
             stmt.step();
             stmt.reset();
           });

@@ -1,4 +1,4 @@
-// v1.24.0 - Reportes: Presupuesto vs Real
+// v1.29.1 - Reportes: Presupuesto vs Real (totales pie de tabla)
 window.SGF = window.SGF || {};
 window.SGF.modules = window.SGF.modules || {};
 
@@ -191,7 +191,7 @@ window.SGF.modules = window.SGF.modules || {};
       });
     }
 
-    function render(treeRoots, currency, rangeLabel){
+    function render(treeRoots, currency, rangeLabel, totals){
       const code = (currency === 'all') ? 'CRC' : currency;
       const fmt = (v)=> E?.fmtMoney ? E.fmtMoney(v, code) : String(v);
       const mc = (v)=> E?.moneyClass ? E.moneyClass(v) : '';
@@ -239,7 +239,22 @@ window.SGF.modules = window.SGF.modules || {};
       }
       for (const r of treeRoots) row(r,0);
 
-      tbody.innerHTML = rows.join('') || `<tr><td class="py-4 px-3 text-slate-500" colspan="5">Sin datos.</td></tr>`;
+
+      const tb = Number(totals?.budget||0);
+      const ta = Number(totals?.actual||0);
+      const td = tb - ta;
+      const tpct = tb>0 ? (ta/tb*100) : 0;
+      const footerRow = `
+        <tr class="bg-slate-50">
+          <td class="py-2 px-2 font-semibold text-slate-800">Total</td>
+          <td class="py-2 px-2 text-right tabular-nums font-semibold text-slate-900">${esc(fmt(tb))}</td>
+          <td class="py-2 px-2 text-right tabular-nums font-semibold ${mc(-ta)}">${esc(fmt(-ta))}</td>
+          <td class="py-2 px-2 text-right tabular-nums font-semibold ${mc(td)}">${esc(fmt(td))}</td>
+          <td class="py-2 px-2 text-right tabular-nums text-slate-500">${tb>0 ? tpct.toFixed(2)+'%' : '—'}</td>
+        </tr>
+      `;
+
+      tbody.innerHTML = (rows.length ? (rows.join('') + footerRow) : '') || `<tr><td class="py-4 px-3 text-slate-500" colspan="5">Sin datos.</td></tr>`;
       labelEl.textContent = rangeLabel;
       try { window.lucide?.createIcons?.(); } catch(_){}
     }
@@ -261,6 +276,10 @@ window.SGF.modules = window.SGF.modules || {};
         currency: curEl.value,
         accountId: Number(accEl.value||0),
       }) : new Map();
+
+      // Totales globales (sin duplicar padres)
+      let totalBudget = 0, totalActual = 0;
+      for (const v of byId.values()) { totalBudget += Number(v.budget||0); totalActual += Number(v.actual||0); }
 
       const { map, roots } = loadCategories();
       for (const n of map.values()){ n.budget=0; n.actual=0; }
@@ -297,7 +316,7 @@ window.SGF.modules = window.SGF.modules || {};
       state.__parents = parents;
       for (const id of Array.from(state.expanded)) if (!valid.has(id)) state.expanded.delete(id);
 
-      render(treeRoots, curEl.value, range.label);
+      render(treeRoots, curEl.value, range.label, { budget: totalBudget, actual: totalActual });
     }
 
     const deb = E?.debounce ? E.debounce(compute, 100) : compute;

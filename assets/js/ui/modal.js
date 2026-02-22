@@ -8,11 +8,20 @@ const MODAL_TEMPLATES = {
     title: 'Movimientos',
     hideSave: true,
     html: `
+      
       <div class="space-y-3">
-        <div>
-          <div id="repdr-subtitle" class="text-sm font-semibold text-slate-900">Movimientos</div>
-          <div class="text-xs text-slate-500" id="repdr-range">—</div>
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div id="repdr-subtitle" class="text-sm font-semibold text-slate-900">Movimientos</div>
+            <div class="text-xs text-slate-500" id="repdr-range">—</div>
+          </div>
+          <div class="text-right">
+            <div id="repdr-total" class="text-sm font-semibold text-slate-900">—</div>
+            <div id="repdr-count" class="text-xs text-slate-500">—</div>
+          </div>
         </div>
+        <div id="repdr-chips" class="flex flex-wrap gap-2"></div>
+
         <div class="overflow-auto border rounded-xl">
           <table class="w-full text-sm">
             <thead class="text-slate-600">

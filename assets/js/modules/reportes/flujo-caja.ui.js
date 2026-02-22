@@ -1,4 +1,4 @@
-// v1.22.0 - Reportes: Flujo de Caja
+// v1.29.1 - Reportes: Flujo de Caja (pie de tabla)
 window.SGF = window.SGF || {};
 window.SGF.modules = window.SGF.modules || {};
 
@@ -125,6 +125,10 @@ window.SGF.modules = window.SGF.modules || {};
         <tr class="hover:bg-slate-50 cursor-pointer" data-kind="cf" data-type="both">
           <td class="py-2 px-3 font-bold">Flujo Neto</td>
           <td class="py-2 px-3 text-right tabular-nums font-bold ${cls(res.net)}">${fmt(res.net)}</td>
+        </tr>
+        <tr class="bg-slate-50">
+          <td class="py-2 px-3 font-semibold">Total</td>
+          <td class="py-2 px-3 text-right tabular-nums font-semibold ${cls(res.net)}">${fmt(res.net)}</td>
         </tr>
       `;
 
