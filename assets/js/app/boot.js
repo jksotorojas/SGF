@@ -1,7 +1,7 @@
 // Boot SGF v1.17.16
 
 window.SGF = window.SGF || {};
-window.SGF.APP_VERSION = '1.29.1';
+window.SGF.APP_VERSION = '1.29.3';
 
 // Nota: La delegación del Split de movimientos vive en el módulo de Movimientos.
 // Mantenerla aquí causaba doble-toggle (dos listeners capturando el mismo click),
