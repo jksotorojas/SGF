@@ -444,42 +444,75 @@ function queryIncomeExpense({ db, year, month, currency, accountId }){
 
 
   // Presupuesto vs Real: retorna Map(categoryId => { budget, actual })
-  function queryBudgetVsActual({ db, year, month, currency, accountId }){
+  function monthsBetween(p1, p2){
+    const [y1,m1] = String(p1).split('-').map(Number);
+    const [y2,m2] = String(p2).split('-').map(Number);
+    if (!y1 || !m1 || !y2 || !m2) return 1;
+    return (y2 - y1) * 12 + (m2 - m1) + 1;
+  }
+
+  // Presupuesto vs Real: retorna Map(categoryId => { budget, actual })
+  function queryBudgetVsActual({ db, year, month, currency, accountId, type }){
     const y = year || 'all';
     const mo = month || 'all';
     const cur = currency || 'CRC';
     const aid = Number(accountId || 0);
+    const typ = type || 'expense'; // 'expense' | 'income' | 'both'
 
     const range = computeRange(y, mo);
     const p = {};
-    let bw = ["b.type='expense'"];
+
+    const typeBudgetWhere =
+      (typ === 'both') ? "b.type IN ('expense','income')" : "b.type = :btyp";
+    if (typ !== 'both') p[':btyp'] = typ;
+
+    const typeMovWhere =
+      (typ === 'both') ? "m.type IN ('income','expense')" : "m.type = :mtyp";
+    if (typ !== 'both') p[':mtyp'] = typ;
+
+    const months = (range.p1 && range.p2) ? monthsBetween(range.p1, range.p2) : 1;
+
+    // Budgets no recurrentes en rango
+    let bw = [typeBudgetWhere, "COALESCE(b.is_recurring,0)=0"];
     if (hasColumn(db,'budgets','active')) bw.push("COALESCE(b.active,1)=1");
     if (range.p1 && range.p2){
       bw.push("b.period BETWEEN :p1 AND :p2"); p[':p1']=range.p1; p[':p2']=range.p2;
     }
     if (cur && cur !== 'all'){ bw.push("COALESCE(b.currency,'CRC') = :cur"); p[':cur']=cur; }
-    const bwSql = bw.length ? `WHERE ${bw.join(' AND ')}` : 'WHERE 1=1';
 
     const budgets = hasTable(db,'budgets') ? dbRows(db, `
       SELECT COALESCE(b.category_id,0) AS categoryId,
              COALESCE(SUM(b.amount),0) AS budget
       FROM budgets b
-      ${bwSql}
+      WHERE ${bw.join(' AND ')}
       GROUP BY b.category_id
     `, p) : [];
 
-    // Actual expenses (movements)
-    let mw = ["m.type='expense'"];
-    if (range.p1 && range.p2){
-      mw.push("m.period BETWEEN :p1 AND :p2");
-    }
-    if (cur && cur !== 'all'){ mw.push("COALESCE(m.currency,'CRC') = :cur"); }
-    if (aid){ mw.push("m.account_id = :aid"); p[':aid']=aid; }
+    // Budgets recurrentes: aplican a cada mes del rango
+    let rw = [typeBudgetWhere, "COALESCE(b.is_recurring,0)=1"];
+    if (hasColumn(db,'budgets','active')) rw.push("COALESCE(b.active,1)=1");
+    if (cur && cur !== 'all'){ rw.push("COALESCE(b.currency,'CRC') = :cur"); }
+
+    const recurring = hasTable(db,'budgets') ? dbRows(db, `
+      SELECT COALESCE(b.category_id,0) AS categoryId,
+             COALESCE(SUM(b.amount),0) AS budget
+      FROM budgets b
+      WHERE ${rw.join(' AND ')}
+      GROUP BY b.category_id
+    `, p) : [];
+
+    // Actual (movements)
+    let mw = [typeMovWhere];
+    if (range.p1 && range.p2) mw.push("m.period BETWEEN :p1 AND :p2");
+    if (cur && cur !== 'all') mw.push("COALESCE(m.currency,'CRC') = :cur");
+    if (aid) { mw.push("m.account_id = :aid"); p[':aid']=aid; }
+
     pushSoftDeleteWhere(mw, db, "movements", "m", "is_deleted");
     if (hasColumn(db,'movements','is_opening')) mw.push("COALESCE(m.is_opening,0)=0");
 
-    const mwSql = mw.length ? `WHERE ${mw.join(' AND ')}` : 'WHERE 1=1';
+    const mwSql = `WHERE ${mw.join(' AND ')}`;
     const hasSplit = hasColumn(db,'movements','is_split');
+
     const nonSplit = dbRows(db, `
       SELECT COALESCE(m.category_id,0) AS categoryId,
              COALESCE(SUM(m.amount),0) AS actual
@@ -508,11 +541,13 @@ function queryIncomeExpense({ db, year, month, currency, accountId }){
     };
 
     for (const r of budgets) put(r.categoryId,'budget',r.budget);
+    for (const r of recurring) put(r.categoryId,'budget', Number(r.budget||0) * months);
     for (const r of nonSplit) put(r.categoryId,'actual',r.actual);
     for (const r of split) put(r.categoryId,'actual',r.actual);
 
     return out;
   }
+  ns.queryBudgetVsActual = queryBudgetVsActual;
   ns.queryBudgetVsActual = queryBudgetVsActual;
 
 

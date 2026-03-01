@@ -372,7 +372,7 @@ window.SGF.modules = window.SGF.modules || {};
             rangeLabel: range.label,
             currency: (curEl.value==='all'?'CRC':curEl.value),
             scope: { kind:'category', id: cid },
-            type: 'expense',
+            type: (typeEl?.value || 'expense'),
             range: { whereSql: range.whereSql, params: range.params },
           });
         }
