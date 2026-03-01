@@ -1,7 +1,7 @@
 // Boot SGF v1.17.16
 
 window.SGF = window.SGF || {};
-window.SGF.APP_VERSION = '1.32.6';
+window.SGF.APP_VERSION = '1.32.7';
 
 // Nota: La delegación del Split de movimientos vive en el módulo de Movimientos.
 // Mantenerla aquí causaba doble-toggle (dos listeners capturando el mismo click),
@@ -151,8 +151,13 @@ function wireLogin() {
 
 
   async function importAndOpenFlow(file) {
-    const password = document.getElementById('password')?.value || '';
-    if ((password || '').length < 6) { toast('La contraseña debe tener mínimo 6 caracteres.'); return; }
+    const uEl = document.getElementById('username');
+    const pEl = document.getElementById('password');
+    const username = String(uEl?.value || '').trim();
+    const password = String(pEl?.value || '');
+
+    if (!username) { toast('Digite usuario.'); return; }
+    if (password.length < 6) { toast('La contraseña debe tener mínimo 6 caracteres.'); return; }
 
     setBusy(btnOpen, true);
     setBusy(btnCreate, true);
@@ -163,18 +168,17 @@ function wireLogin() {
       const payload = JSON.parse(txt);
 
       const importedUser = String(payload?.username || '').trim();
-      if (!importedUser) { throw new Error('Archivo inválido: no contiene username.'); }
-
-      // Si el usuario digitado está vacío o distinto, lo sincronizamos al importado
-      const uEl = document.getElementById('username');
-      const typedUser = String(uEl?.value || '').trim();
-      if (uEl && (!typedUser || typedUser !== importedUser)) uEl.value = importedUser;
+      if (!importedUser) throw new Error('Archivo inválido: no contiene username.');
+      if (importedUser !== username) {
+        throw new Error(`El archivo pertenece a "${importedUser}". Digite ese usuario para abrirlo.`);
+      }
 
       await window.SGF.vault.importAndOpenPayload(payload, password, { overwrite: true });
 
-      toast('Archivo importado y bóveda abierta.');
+      toast('Archivo importado. Bóveda abierta.');
       await showAppShell();
     } catch (err) {
+      console.error(err);
       toast(err?.message || 'No se pudo importar/abrir.');
     } finally {
       setBusy(btnOpen, false);
@@ -183,6 +187,7 @@ function wireLogin() {
       if (importInput) importInput.value = '';
     }
   }
+
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
