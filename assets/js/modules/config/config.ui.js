@@ -315,12 +315,64 @@ function wireBackupImport() {
         const payload = JSON.parse(txt);
         await window.SGF.vault.importVaultPayload(payload, { overwrite: true });
 
-        const importedUser = String(payload?.username || '');
+                const importedUser = String(payload?.username || '');
         const currentUser = String(window.SGF?.session?.username || '');
+
+        // Si importas el MISMO usuario, aplica inmediatamente (sin cerrar sesión)
+        // Requiere contraseña para reabrir la bóveda importada.
+        const askPassword = async (u) => {
+          if (window.SGF.uiPrompt) {
+            return await window.SGF.uiPrompt({
+              title: 'Contraseña requerida',
+              message: `Digite la contraseña para abrir la bóveda importada (${u}).`,
+              placeholder: 'Contraseña',
+              type: 'password',
+              confirmText: 'Abrir',
+              cancelText: 'Cancelar',
+            });
+          }
+          return prompt(`Digite la contraseña para abrir la bóveda importada (${u}):`) || '';
+        };
+
+        const applyImported = async (u) => {
+          const pwd = await askPassword(u);
+          if (!pwd) { toast('Importación cancelada.'); return false; }
+          await window.SGF.vault.importAndOpenPayload(payload, pwd, { overwrite: true });
+
+          // asegurar migraciones y refresco visual
+          try { await window.SGF.migrate?.ensureAll?.(); } catch (e) { console.warn('migrate.ensureAll', e); }
+
+          // actualizar usuario en header si cambió
+          try {
+            const ud = document.getElementById('user-display');
+            if (ud) ud.textContent = String(window.SGF?.session?.username || u || '—');
+          } catch (_) {}
+
+          // volver al dashboard para reflejar datos recién cargados
+          try { window.SGF.navigate?.('dashboard'); } catch (_) {}
+          toast('Respaldo importado y aplicado.');
+          return true;
+        };
+
         if (importedUser && currentUser && importedUser === currentUser) {
-          toast('Respaldo importado. Cierra sesión e inicia nuevamente para aplicarlo.');
+          await applyImported(importedUser);
+        } else if (importedUser) {
+          // Importaste otro usuario: permite abrirlo de inmediato si quieres
+          const ok = window.SGF.uiConfirm
+            ? await window.SGF.uiConfirm({
+                title: 'Respaldo importado',
+                message: `Respaldo importado para usuario: ${importedUser}.\n\n¿Deseas abrir este usuario ahora?`,
+                confirmText: 'Abrir ahora',
+                cancelText: 'No',
+              })
+            : confirm(`Respaldo importado para usuario: ${importedUser}.\n\n¿Deseas abrir este usuario ahora?`);
+          if (ok) {
+            await applyImported(importedUser);
+          } else {
+            toast(`Respaldo importado para usuario: ${importedUser}.`);
+          }
         } else {
-          toast(`Respaldo importado para usuario: ${importedUser || '(desconocido)'}.`);
+          toast('Respaldo importado.');
         }
       } catch (e) {
         console.error(e);
