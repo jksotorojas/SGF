@@ -241,13 +241,10 @@ patchFxPrefill();
 
 
 function wireBackupImport() {
-  const btnExport = document.getElementById('btn-vault-export');
-  const btnImport = document.getElementById('btn-vault-import');
-  const fileInput = document.getElementById('vault-import-file');
+  // v1.32.6: el flujo de Importar/Exportar bóveda se mueve al LOGIN (para multi-dispositivo).
+  // Aquí solo queda el toggle de auto-backup (por dispositivo).
   const chkAuto = document.getElementById('cfg-auto-backup');
-  const btnLatest = document.getElementById('btn-vault-latest-backup');
-  const btnRestore = document.getElementById('btn-vault-restore-latest-backup');
-  const lblLast = document.getElementById('lbl-last-backup');
+  if (!chkAuto) return;
 
   function getConfig(key, fallback='') {
     try {
@@ -262,155 +259,19 @@ function wireBackupImport() {
     await window.SGF.db.save();
   }
 
-  async function refreshBackupLabel() {
-    try {
-      const rows = await window.SGF.vault.listBackups();
-      if (!lblLast) return;
-      if (!rows.length) {
-        lblLast.textContent = 'Sin auto-backups.';
-      } else {
-        const dt = String(rows[0].createdAt || '').replace('T',' ').replace('Z','');
-        lblLast.textContent = 'Último: ' + dt;
-      }
-    } catch (_) {
-      if (lblLast) lblLast.textContent = '';
-    }
-  }
-
-  if (chkAuto) {
+  try {
     chkAuto.checked = getConfig('autoBackup', '0') === '1';
-    chkAuto.onchange = async () => {
-      try {
-        await setConfig('autoBackup', chkAuto.checked ? '1' : '0');
-        toast(chkAuto.checked ? 'Auto-backup activado.' : 'Auto-backup desactivado.');
-        await refreshBackupLabel();
-      } catch (e) {
-        console.error(e);
-        toast('No se pudo guardar la preferencia.');
-      }
-    };
-  }
+  } catch (_) {}
 
-  if (btnExport) {
-    btnExport.onclick = async () => {
-      try {
-        await window.SGF.db.save();
-        await window.SGF.vault.exportCurrentVaultFile();
-        toast('Respaldo exportado.');
-        await refreshBackupLabel();
-      } catch (e) {
-        console.error(e);
-        toast(String(e?.message || e || 'Error al exportar respaldo.'));
-      }
-    };
-  }
-
-  if (btnImport && fileInput) {
-    btnImport.onclick = () => fileInput.click();
-    fileInput.onchange = async (ev) => {
-      const f = ev.target.files && ev.target.files[0];
-      if (!f) return;
-      try {
-        const txt = await f.text();
-        const payload = JSON.parse(txt);
-        await window.SGF.vault.importVaultPayload(payload, { overwrite: true });
-
-                const importedUser = String(payload?.username || '');
-        const currentUser = String(window.SGF?.session?.username || '');
-
-        // Si importas el MISMO usuario, aplica inmediatamente (sin cerrar sesión)
-        // Requiere contraseña para reabrir la bóveda importada.
-        const askPassword = async (u) => {
-          if (window.SGF.uiPrompt) {
-            return await window.SGF.uiPrompt({
-              title: 'Contraseña requerida',
-              message: `Digite la contraseña para abrir la bóveda importada (${u}).`,
-              placeholder: 'Contraseña',
-              type: 'password',
-              confirmText: 'Abrir',
-              cancelText: 'Cancelar',
-            });
-          }
-          return prompt(`Digite la contraseña para abrir la bóveda importada (${u}):`) || '';
-        };
-
-        const applyImported = async (u) => {
-          const pwd = await askPassword(u);
-          if (!pwd) { toast('Importación cancelada.'); return false; }
-          await window.SGF.vault.importAndOpenPayload(payload, pwd, { overwrite: true });
-
-          // asegurar migraciones y refresco visual
-          try { await window.SGF.migrate?.ensureAll?.(); } catch (e) { console.warn('migrate.ensureAll', e); }
-
-          // actualizar usuario en header si cambió
-          try {
-            const ud = document.getElementById('user-display');
-            if (ud) ud.textContent = String(window.SGF?.session?.username || u || '—');
-          } catch (_) {}
-
-          // volver al dashboard para reflejar datos recién cargados
-          try { window.SGF.navigate?.('dashboard'); } catch (_) {}
-          toast('Respaldo importado y aplicado.');
-          return true;
-        };
-
-        if (importedUser && currentUser && importedUser === currentUser) {
-          await applyImported(importedUser);
-        } else if (importedUser) {
-          // Importaste otro usuario: permite abrirlo de inmediato si quieres
-          const ok = window.SGF.uiConfirm
-            ? await window.SGF.uiConfirm({
-                title: 'Respaldo importado',
-                message: `Respaldo importado para usuario: ${importedUser}.\n\n¿Deseas abrir este usuario ahora?`,
-                confirmText: 'Abrir ahora',
-                cancelText: 'No',
-              })
-            : confirm(`Respaldo importado para usuario: ${importedUser}.\n\n¿Deseas abrir este usuario ahora?`);
-          if (ok) {
-            await applyImported(importedUser);
-          } else {
-            toast(`Respaldo importado para usuario: ${importedUser}.`);
-          }
-        } else {
-          toast('Respaldo importado.');
-        }
-      } catch (e) {
-        console.error(e);
-        toast(String(e?.message || e || 'Error al importar respaldo.'));
-      } finally {
-        fileInput.value = '';
-        await refreshBackupLabel();
-      }
-    };
-  }
-
-  if (btnLatest) {
-    btnLatest.onclick = async () => {
-      try {
-        await window.SGF.vault.downloadLatestBackupFile();
-      } catch (e) {
-        console.error(e);
-        toast(e?.message || 'No hay auto-backups para descargar.');
-      }
-    };
-  }
-
-  if (btnRestore) {
-    btnRestore.onclick = async () => {
-      const ok = confirm('¿Restaurar el último auto-backup? Esto reemplaza la bóveda local.');
-      if (!ok) return;
-      try {
-        await window.SGF.vault.restoreLatestBackup();
-        toast('Auto-backup restaurado. Recargando...');
-        setTimeout(() => location.reload(), 350);
-      } catch (e) {
-        console.error(e);
-        toast(e?.message || 'No se pudo restaurar.');
-      }
-    };
-  }
-
-  refreshBackupLabel();
+  chkAuto.addEventListener('change', async () => {
+    try {
+      await setConfig('autoBackup', chkAuto.checked ? '1' : '0');
+      toast(chkAuto.checked ? 'Auto-backup activado.' : 'Auto-backup desactivado.');
+    } catch (e) {
+      console.error(e);
+      toast('No se pudo guardar la preferencia.');
+    }
+  });
 }
 
 

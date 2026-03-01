@@ -1,7 +1,7 @@
 // Boot SGF v1.17.16
 
 window.SGF = window.SGF || {};
-window.SGF.APP_VERSION = '1.32.5';
+window.SGF.APP_VERSION = '1.32.6';
 
 // Nota: La delegación del Split de movimientos vive en el módulo de Movimientos.
 // Mantenerla aquí causaba doble-toggle (dos listeners capturando el mismo click),
@@ -95,6 +95,8 @@ function wireLogin() {
   const form = document.getElementById('login-form');
   const btnOpen = document.getElementById('btn-open');
   const btnCreate = document.getElementById('btn-create');
+  const btnImportOpen = document.getElementById('btn-import-open');
+  const importInput = document.getElementById('login-import-file');
   const btnDeleteAll = document.getElementById('btn-delete-all');
   if (!form) return;
 
@@ -147,6 +149,41 @@ function wireLogin() {
     }
   }
 
+
+  async function importAndOpenFlow(file) {
+    const password = document.getElementById('password')?.value || '';
+    if ((password || '').length < 6) { toast('La contraseña debe tener mínimo 6 caracteres.'); return; }
+
+    setBusy(btnOpen, true);
+    setBusy(btnCreate, true);
+    setBusy(btnImportOpen, true);
+
+    try {
+      const txt = await file.text();
+      const payload = JSON.parse(txt);
+
+      const importedUser = String(payload?.username || '').trim();
+      if (!importedUser) { throw new Error('Archivo inválido: no contiene username.'); }
+
+      // Si el usuario digitado está vacío o distinto, lo sincronizamos al importado
+      const uEl = document.getElementById('username');
+      const typedUser = String(uEl?.value || '').trim();
+      if (uEl && (!typedUser || typedUser !== importedUser)) uEl.value = importedUser;
+
+      await window.SGF.vault.importAndOpenPayload(payload, password, { overwrite: true });
+
+      toast('Archivo importado y bóveda abierta.');
+      await showAppShell();
+    } catch (err) {
+      toast(err?.message || 'No se pudo importar/abrir.');
+    } finally {
+      setBusy(btnOpen, false);
+      setBusy(btnCreate, false);
+      setBusy(btnImportOpen, false);
+      if (importInput) importInput.value = '';
+    }
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     await openFlow();
@@ -155,6 +192,18 @@ function wireLogin() {
   btnCreate?.addEventListener('click', async () => {
     await createFlow();
   });
+
+
+  // Importar y abrir (ideal para cambiar de dispositivo)
+  if (btnImportOpen && importInput) {
+    btnImportOpen.addEventListener('click', () => importInput.click());
+    importInput.addEventListener('change', async (ev) => {
+      const f = ev.target.files && ev.target.files[0];
+      if (!f) return;
+      await importAndOpenFlow(f);
+    });
+  }
+
 
   // Eliminar TODOS
   btnDeleteAll?.addEventListener('click', async () => {

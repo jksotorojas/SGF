@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SGF v1.32.5 - Sistema de Gestión Financiera</title>
+  <title>SGF v1.32.6 - Sistema de Gestión Financiera</title>
   <!-- Tailwind CSS (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -54,6 +54,13 @@
         <button id="btn-create" type="button" class="w-full bg-slate-900 text-white py-2 rounded-lg font-semibold hover:bg-slate-800 transition flex items-center justify-center gap-2">
           <span>Crear usuario</span>
         </button>
+      
+        <button id="btn-import-open" type="button" class="w-full bg-white border border-slate-300 text-slate-800 py-2 rounded-lg font-semibold hover:bg-slate-50 transition flex items-center justify-center gap-2">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Importar y abrir archivo</span>
+        </button>
+        <input id="login-import-file" type="file" accept="application/json" class="hidden" />
+
       </form>
 
       <div class="mt-4 space-y-2">
