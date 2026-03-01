@@ -162,6 +162,7 @@ window.SGF.modules = window.SGF.modules || {};
     const yearEl=$('bvr-year');
     const monthEl=$('bvr-month');
     const curEl=$('bvr-currency');
+    const typeEl=$('bvr-type');
     const accEl=$('bvr-account');
     const ordEl=$('bvr-order');
     const labelEl=$('bvr-range-label');
@@ -173,6 +174,7 @@ window.SGF.modules = window.SGF.modules || {};
     const saved = E?.loadFilters ? E.loadFilters(STORE_KEY) : null;
 
     fillSelect(curEl, loadCurrencies(), saved?.currency || 'all');
+    if (typeEl) typeEl.value = saved?.type || typeEl.value || 'expense';
     fillSelect(accEl, loadAccounts(), saved?.accountId ?? 0);
     fillSelect(yearEl, loadYears(curEl.value, accEl.value), saved?.year || 'all');
     fillSelect(monthEl, MONTHS, saved?.month || 'all');
@@ -187,16 +189,23 @@ window.SGF.modules = window.SGF.modules || {};
         year: yearEl.value,
         month: monthEl.value,
         currency: curEl.value,
+        type: (typeEl?.value || 'expense'),
         accountId: accEl.value,
         order: ordEl.value,
         expanded: E?.serializeSet ? E.serializeSet(state.expanded) : Array.from(state.expanded),
       });
     }
 
-    function render(treeRoots, currency, rangeLabel, totals){
+    function render(treeRoots, currency, rangeLabel, totals, typ){
       const code = (currency === 'all') ? 'CRC' : currency;
       const fmt = (v)=> E?.fmtMoney ? E.fmtMoney(v, code) : String(v);
       const mc = (v)=> E?.moneyClass ? E.moneyClass(v) : '';
+
+      // Convención de visualización:
+      // - Gastos: el "Real" se muestra negativo (salida de dinero)
+      // - Ingresos: el "Real" se muestra positivo
+      // - Ambos: se muestra positivo (no hay forma confiable de asignar signo por categoría)
+      const actualSign = (typ === 'expense') ? -1 : 1;
 
       // denom for percentage: total budget (abs)
       let denomBudget = 0;
@@ -229,7 +238,7 @@ window.SGF.modules = window.SGF.modules || {};
               </div>
             </td>
             <td class="py-2 px-2 text-right tabular-nums"><span class="text-slate-900">${esc(fmt(b))}</span></td>
-            <td class="py-2 px-2 text-right tabular-nums"><span class="${mc(-a)}">${esc(fmt(-a))}</span></td>
+            <td class="py-2 px-2 text-right tabular-nums"><span class="${mc(actualSign*a)}">${esc(fmt(actualSign*a))}</span></td>
             <td class="py-2 px-2 text-right tabular-nums"><span class="${mc(diff)}">${esc(fmt(diff))}</span></td>
             <td class="py-2 px-2 text-right tabular-nums ${pctCls}">${pctTxt}</td>
           </tr>
@@ -250,7 +259,7 @@ window.SGF.modules = window.SGF.modules || {};
         <tr class="bg-slate-50">
           <td class="py-2 px-2 font-semibold text-slate-800">Total</td>
           <td class="py-2 px-2 text-right tabular-nums font-semibold text-slate-900">${esc(fmt(tb))}</td>
-          <td class="py-2 px-2 text-right tabular-nums font-semibold ${mc(-ta)}">${esc(fmt(-ta))}</td>
+          <td class="py-2 px-2 text-right tabular-nums font-semibold ${mc(actualSign*ta)}">${esc(fmt(actualSign*ta))}</td>
           <td class="py-2 px-2 text-right tabular-nums font-semibold ${mc(td)}">${esc(fmt(td))}</td>
           <td class="py-2 px-2 text-right tabular-nums text-slate-500">${tb>0 ? tpct.toFixed(2)+'%' : '—'}</td>
         </tr>
@@ -277,6 +286,7 @@ window.SGF.modules = window.SGF.modules || {};
         month: monthEl.value,
         currency: curEl.value,
         accountId: Number(accEl.value||0),
+        type: (typeEl?.value || 'expense'),
       }) : new Map();
 
       // Totales globales (sin duplicar padres)
@@ -318,12 +328,12 @@ window.SGF.modules = window.SGF.modules || {};
       state.__parents = parents;
       for (const id of Array.from(state.expanded)) if (!valid.has(id)) state.expanded.delete(id);
 
-      render(treeRoots, curEl.value, range.label, { budget: totalBudget, actual: totalActual });
+      render(treeRoots, curEl.value, range.label, { budget: totalBudget, actual: totalActual }, (typeEl?.value || 'expense'));
     }
 
     const deb = E?.debounce ? E.debounce(compute, 100) : compute;
 
-    [yearEl, monthEl, curEl, accEl, ordEl].forEach(el => el && el.addEventListener('change', ()=>{
+    [yearEl, monthEl, curEl, typeEl, accEl, ordEl].forEach(el => el && el.addEventListener('change', ()=>{
       if (el === curEl || el === accEl){
         fillSelect(yearEl, loadYears(curEl.value, accEl.value), yearEl.value);
       }
