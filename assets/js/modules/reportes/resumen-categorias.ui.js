@@ -198,7 +198,9 @@ window.SGF.modules = window.SGF.modules || {};
 
     const saved = E?.loadFilters ? E.loadFilters(STORE_KEY) : null;
 
-    // init selects
+    
+    const saved2 = Object.assign({}, saved || {}, { type: "both" });
+// init selects
     fillSelect(curEl, loadCurrencies(), saved?.currency || 'all');
     fillSelect(accEl, loadAccounts(), saved?.accountId ?? 'all');
     fillSelect(yearEl, loadYears(curEl.value, accEl.value), saved?.year || 'all');
@@ -211,7 +213,7 @@ window.SGF.modules = window.SGF.modules || {};
       { value:'expense', label:'Gastos' },
       { value:'income', label:'Ingresos' },
       { value:'both', label:'Ambos (Ingresos + Gastos)' },
-    ], saved?.type || 'both');
+    ], saved2.type || 'both');
 
     // state
     const state = {

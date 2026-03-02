@@ -173,7 +173,9 @@ window.SGF.modules = window.SGF.modules || {};
 
     const saved = E?.loadFilters ? E.loadFilters(STORE_KEY) : null;
 
-    fillSelect(curEl, loadCurrencies(), saved?.currency || 'all');
+    
+    const saved2 = Object.assign({}, saved || {}, { type: "both" });
+fillSelect(curEl, loadCurrencies(), saved?.currency || 'all');
     if (typeEl) typeEl.value = saved?.type || typeEl.value || 'expense';
     fillSelect(accEl, loadAccounts(), saved?.accountId ?? 0);
     fillSelect(yearEl, loadYears(curEl.value, accEl.value), saved?.year || 'all');

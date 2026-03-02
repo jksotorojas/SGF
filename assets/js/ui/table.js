@@ -14,12 +14,21 @@ function sgfMakeTableCardResponsive(tableEl){
   const tbody = tableEl.querySelector('tbody');
   if (!thead || !tbody) return;
 
-  const headers = Array.from(thead.querySelectorAll('th')).map(th => (th.textContent || '').trim());
+  // Construir headers respetando colspan (primer row del thead)
+  const headerRow = thead.querySelector('tr');
+  const ths = headerRow ? Array.from(headerRow.querySelectorAll('th')) : Array.from(thead.querySelectorAll('th'));
+  const headers = [];
+  ths.forEach(th=>{
+    const txt = (th.textContent || '').trim();
+    const cs = Number(th.getAttribute('colspan') || 1);
+    for(let i=0;i<cs;i++) headers.push(txt);
+  });
 
   Array.from(tbody.querySelectorAll('tr')).forEach(tr => {
     const tds = Array.from(tr.children).filter(el => el.tagName === 'TD');
     tds.forEach((td, idx) => {
-      const label = headers[idx] || `Col ${idx+1}`;
+      const raw = headers[idx];
+      const label = (raw === undefined) ? '' : String(raw || '').trim();
       td.setAttribute('data-label', label);
     });
   });

@@ -202,7 +202,7 @@ window.SGF.modules = window.SGF.modules || {};
     return { income: Number(income||0), expense: Number(expense||0), savings: Number(savings||0), net: Number(net||0), rangeLabel: label };
   }
 
-  function renderHierarchy({ tbody, rows, currency, expandedTypes, order = 'desc', expandAll = false, tipo = 'expense' }) {
+  function renderHierarchy({ tbody, rows, currency, expandedTypes, order = 'desc', expandAll = false, tipo = 'both' }) {
     const groups = new Map();
     for (const r of rows) {
       const k = String(r.typeName || 'Sin tipo').trim();

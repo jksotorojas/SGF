@@ -60,7 +60,9 @@ window.SGF.modules = window.SGF.modules || {};
 
     const saved = E?.loadFilters ? E.loadFilters(STORE_KEY) : null;
 
-    fillSelect(yearEl, loadYears(), saved?.year || 'all');
+    
+    const saved2 = Object.assign({}, saved || {}, { type: "both" });
+fillSelect(yearEl, loadYears(), saved?.year || 'all');
     fillSelect(monthEl, MONTHS, saved?.month || 'all');
     fillSelect(curEl, loadCurrencies(), saved?.currency || 'all');
     fillSelect(accEl, loadAccounts(), saved?.accountId ?? 0);
