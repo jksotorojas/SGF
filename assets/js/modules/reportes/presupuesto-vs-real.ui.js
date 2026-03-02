@@ -198,7 +198,7 @@ fillSelect(curEl, loadCurrencies(), saved?.currency || 'all');
       });
     }
 
-    function render(treeRoots, currency, rangeLabel, totals, typ){
+    function render(treeRoots, currency, rangeLabel, totals, typ, incomeSet){
       const code = (currency === 'all') ? 'CRC' : currency;
       const fmt = (v)=> E?.fmtMoney ? E.fmtMoney(v, code) : String(v);
       const mc = (v)=> E?.moneyClass ? E.moneyClass(v) : '';
@@ -206,8 +206,16 @@ fillSelect(curEl, loadCurrencies(), saved?.currency || 'all');
       // Convención de visualización:
       // - Gastos: el "Real" se muestra negativo (salida de dinero)
       // - Ingresos: el "Real" se muestra positivo
-      // - Ambos: se muestra positivo (no hay forma confiable de asignar signo por categoría)
-      const actualSign = (typ === 'expense') ? -1 : 1;
+      // - Ambos: asignamos signo por árbol de categoría (Ingresos vs resto)
+      const isSet = (incomeSet && typeof incomeSet.has === 'function') ? incomeSet : new Set();
+      const signFor = (id)=>{
+        if (typ === 'income') return 1;
+        if (typ === 'expense') return -1;
+        // typ === 'both'
+        const nid = Number(id || 0);
+        if (nid === 0) return 1; // sin categoría: no se puede inferir
+        return isSet.has(nid) ? 1 : -1;
+      };
 
       // denom for percentage: total budget (abs)
       let denomBudget = 0;
@@ -221,10 +229,13 @@ fillSelect(curEl, loadCurrencies(), saved?.currency || 'all');
 
         const b = Number(node.budget||0);
         const a = Number(node.actual||0);
-        const diff = b - a;
-        const pct = b>0 ? (a/b*100) : 0;
-        const pctTxt = (b>0) ? `${pct.toFixed(2)}%` : '—';
-        const pctCls = (b>0 && pct>100) ? 'text-rose-700' : 'text-slate-500';
+        const s = signFor(node.id);
+        const bDisp = (typ === 'both') ? (s * b) : b;
+        const aDisp = s * a;
+        const diff = bDisp - aDisp;
+        const pct = (Math.abs(b)>0) ? (Math.abs(a)/Math.abs(b)*100) : 0;
+        const pctTxt = (Math.abs(b)>0) ? `${pct.toFixed(2)}%` : '—';
+        const pctCls = (Math.abs(b)>0 && pct>100) ? 'text-rose-700' : 'text-slate-500';
 
         const caret = hasKids ? `
           <button type="button" class="bvr-toggle inline-flex items-center justify-center w-6 h-6 rounded-lg hover:bg-slate-100" data-id="${node.id}">
@@ -239,8 +250,8 @@ fillSelect(curEl, loadCurrencies(), saved?.currency || 'all');
                 <span class="font-medium">${esc(node.name)}</span>
               </div>
             </td>
-            <td class="py-2 px-2 text-right tabular-nums"><span class="text-slate-900">${esc(fmt(b))}</span></td>
-            <td class="py-2 px-2 text-right tabular-nums"><span class="${mc(actualSign*a)}">${esc(fmt(actualSign*a))}</span></td>
+            <td class="py-2 px-2 text-right tabular-nums"><span class="text-slate-900">${esc(fmt(bDisp))}</span></td>
+            <td class="py-2 px-2 text-right tabular-nums"><span class="${mc(aDisp)}">${esc(fmt(aDisp))}</span></td>
             <td class="py-2 px-2 text-right tabular-nums"><span class="${mc(diff)}">${esc(fmt(diff))}</span></td>
             <td class="py-2 px-2 text-right tabular-nums ${pctCls}">${pctTxt}</td>
           </tr>
@@ -253,21 +264,66 @@ fillSelect(curEl, loadCurrencies(), saved?.currency || 'all');
       for (const r of treeRoots) row(r,0);
 
 
-      const tb = Number(totals?.budget||0);
-      const ta = Number(totals?.actual||0);
-      const td = tb - ta;
-      const tpct = tb>0 ? (ta/tb*100) : 0;
-      const footerRow = `
-        <tr class="bg-slate-50">
-          <td class="py-2 px-2 font-semibold text-slate-800">Total</td>
-          <td class="py-2 px-2 text-right tabular-nums font-semibold text-slate-900">${esc(fmt(tb))}</td>
-          <td class="py-2 px-2 text-right tabular-nums font-semibold ${mc(actualSign*ta)}">${esc(fmt(actualSign*ta))}</td>
-          <td class="py-2 px-2 text-right tabular-nums font-semibold ${mc(td)}">${esc(fmt(td))}</td>
-          <td class="py-2 px-2 text-right tabular-nums text-slate-500">${tb>0 ? tpct.toFixed(2)+'%' : '—'}</td>
-        </tr>
-      `;
+      let footerHtml = '';
+      if (typ === 'both'){
+        const bi = Number(totals?.budgetIncome||0);
+        const ai = Number(totals?.actualIncome||0);
+        const be = Number(totals?.budgetExpense||0);
+        const ae = Number(totals?.actualExpense||0);
 
-      tbody.innerHTML = (rows.length ? (rows.join('') + footerRow) : '') || `<tr><td class="py-4 px-3 text-slate-500" colspan="5">Sin datos.</td></tr>`;
+        const bNet = bi - be;
+        const aNet = ai - ae;
+        const dNet = bNet - aNet;
+        const pNet = (Math.abs(bNet)>0) ? (Math.abs(aNet)/Math.abs(bNet)*100) : 0;
+
+        const di = bi - ai;
+        const pi = (Math.abs(bi)>0) ? (Math.abs(ai)/Math.abs(bi)*100) : 0;
+
+        const bExpDisp = -be;
+        const aExpDisp = -ae;
+        const dExp = bExpDisp - aExpDisp; // (-be) - (-ae) = -(be-ae)
+        const pExp = (Math.abs(be)>0) ? (Math.abs(ae)/Math.abs(be)*100) : 0;
+
+        footerHtml = `
+          <tr class="bg-slate-50">
+            <td class="py-2 px-2 font-semibold text-slate-800">Total Ingresos</td>
+            <td class="py-2 px-2 text-right tabular-nums font-semibold text-slate-900">${esc(fmt(bi))}</td>
+            <td class="py-2 px-2 text-right tabular-nums font-semibold ${mc(ai)}">${esc(fmt(ai))}</td>
+            <td class="py-2 px-2 text-right tabular-nums font-semibold ${mc(di)}">${esc(fmt(di))}</td>
+            <td class="py-2 px-2 text-right tabular-nums text-slate-500">${Math.abs(bi)>0 ? pi.toFixed(2)+'%' : '—'}</td>
+          </tr>
+          <tr class="bg-slate-50">
+            <td class="py-2 px-2 font-semibold text-slate-800">Total Gastos</td>
+            <td class="py-2 px-2 text-right tabular-nums font-semibold text-slate-900">${esc(fmt(bExpDisp))}</td>
+            <td class="py-2 px-2 text-right tabular-nums font-semibold ${mc(aExpDisp)}">${esc(fmt(aExpDisp))}</td>
+            <td class="py-2 px-2 text-right tabular-nums font-semibold ${mc(dExp)}">${esc(fmt(dExp))}</td>
+            <td class="py-2 px-2 text-right tabular-nums text-slate-500">${Math.abs(be)>0 ? pExp.toFixed(2)+'%' : '—'}</td>
+          </tr>
+          <tr class="bg-slate-50">
+            <td class="py-2 px-2 font-semibold text-slate-800">Total Neto</td>
+            <td class="py-2 px-2 text-right tabular-nums font-semibold text-slate-900">${esc(fmt(bNet))}</td>
+            <td class="py-2 px-2 text-right tabular-nums font-semibold ${mc(aNet)}">${esc(fmt(aNet))}</td>
+            <td class="py-2 px-2 text-right tabular-nums font-semibold ${mc(dNet)}">${esc(fmt(dNet))}</td>
+            <td class="py-2 px-2 text-right tabular-nums text-slate-500">${Math.abs(bNet)>0 ? pNet.toFixed(2)+'%' : '—'}</td>
+          </tr>
+        `;
+      } else {
+        const tb = Number(totals?.budget||0);
+        const ta = Number(totals?.actual||0);
+        const td = tb - ta;
+        const tpct = (Math.abs(tb)>0) ? (Math.abs(ta)/Math.abs(tb)*100) : 0;
+        const sTot = (typ === 'expense') ? -1 : 1;
+        footerHtml = `
+          <tr class="bg-slate-50">
+            <td class="py-2 px-2 font-semibold text-slate-800">Total</td>
+            <td class="py-2 px-2 text-right tabular-nums font-semibold text-slate-900">${esc(fmt(tb))}</td>
+            <td class="py-2 px-2 text-right tabular-nums font-semibold ${mc(sTot*ta)}">${esc(fmt(sTot*ta))}</td>
+            <td class="py-2 px-2 text-right tabular-nums font-semibold ${mc(td)}">${esc(fmt(td))}</td>
+            <td class="py-2 px-2 text-right tabular-nums text-slate-500">${Math.abs(tb)>0 ? tpct.toFixed(2)+'%' : '—'}</td>
+          </tr>
+        `;
+      }
+      tbody.innerHTML = (rows.length ? (rows.join('') + footerHtml) : '') || `<tr><td class="py-4 px-3 text-slate-500" colspan="5">Sin datos.</td></tr>`;
       labelEl.textContent = rangeLabel;
       try { window.lucide?.createIcons?.(); } catch(_){}
       try { window.sgfMakeTableCardResponsive?.(tbody?.closest?.('table') || document.getElementById('bvr-table')); } catch(_){}
@@ -291,12 +347,53 @@ fillSelect(curEl, loadCurrencies(), saved?.currency || 'all');
         accountId: Number(accEl.value||0),
         type: (typeEl?.value || 'expense'),
       }) : new Map();
+      const typ = (typeEl?.value || 'expense');
 
-      // Totales globales (sin duplicar padres)
-      let totalBudget = 0, totalActual = 0;
-      for (const v of byId.values()) { totalBudget += Number(v.budget||0); totalActual += Number(v.actual||0); }
+      // Totales globales
+      let totals = { budget: 0, actual: 0 };
+      if (typ === 'both' && D?.queryBudgetVsActual){
+        const byIdIncome = D.queryBudgetVsActual({
+          db: window.SGF.db,
+          year: yearEl.value,
+          month: monthEl.value,
+          currency: curEl.value,
+          accountId: Number(accEl.value||0),
+          type: 'income',
+        });
+        const byIdExpense = D.queryBudgetVsActual({
+          db: window.SGF.db,
+          year: yearEl.value,
+          month: monthEl.value,
+          currency: curEl.value,
+          accountId: Number(accEl.value||0),
+          type: 'expense',
+        });
+
+        let bi=0, ai=0, be=0, ae=0;
+        for (const v of byIdIncome.values()) { bi += Number(v.budget||0); ai += Number(v.actual||0); }
+        for (const v of byIdExpense.values()) { be += Number(v.budget||0); ae += Number(v.actual||0); }
+
+        totals = { budgetIncome: bi, actualIncome: ai, budgetExpense: be, actualExpense: ae };
+      } else {
+        let tb=0, ta=0;
+        for (const v of byId.values()) { tb += Number(v.budget||0); ta += Number(v.actual||0); }
+        totals = { budget: tb, actual: ta };
+      }
 
       const { map, roots } = loadCategories();
+
+      // Identificar árbol de "Ingresos" para asignar signo en modo "Ambos"
+      const incomeSet = new Set();
+      const incomeNode = Array.from(map.values()).find(n => String(n.name||'').trim().toLowerCase() === 'ingresos');
+      if (incomeNode){
+        const st=[incomeNode];
+        while (st.length){
+          const n=st.pop();
+          incomeSet.add(Number(n.id||0));
+          for (const ch of (n.children||[])) st.push(ch);
+        }
+      }
+
       for (const n of map.values()){ n.budget=0; n.actual=0; }
 
       for (const [cid, obj] of byId.entries()){
@@ -331,7 +428,7 @@ fillSelect(curEl, loadCurrencies(), saved?.currency || 'all');
       state.__parents = parents;
       for (const id of Array.from(state.expanded)) if (!valid.has(id)) state.expanded.delete(id);
 
-      render(treeRoots, curEl.value, range.label, { budget: totalBudget, actual: totalActual }, (typeEl?.value || 'expense'));
+      render(treeRoots, curEl.value, range.label, totals, typ, incomeSet);
     }
 
     const deb = E?.debounce ? E.debounce(compute, 100) : compute;
