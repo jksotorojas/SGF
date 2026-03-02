@@ -26,3 +26,30 @@ function sgfMakeTableCardResponsive(tableEl){
 }
 
 window.sgfMakeTableCardResponsive = sgfMakeTableCardResponsive;
+
+
+// Vincula la tabla para modo "cards" en móvil y re-aplica etiquetas al cambiar filas
+(function(){
+  const _obs = new WeakMap();
+
+  function sgfBindResponsiveTable(tableEl){
+    if (!tableEl) return;
+    // aplicar ahora
+    try { window.sgfMakeTableCardResponsive?.(tableEl); } catch(_) {}
+
+    const tbody = tableEl.querySelector('tbody');
+    if (!tbody) return;
+
+    if (_obs.has(tableEl)) return; // ya está vinculada
+
+    const mo = new MutationObserver(() => {
+      try { window.sgfMakeTableCardResponsive?.(tableEl); } catch(_) {}
+    });
+
+    mo.observe(tbody, { childList: true, subtree: true });
+    _obs.set(tableEl, mo);
+  }
+
+  window.sgfBindResponsiveTable = sgfBindResponsiveTable;
+})();
+

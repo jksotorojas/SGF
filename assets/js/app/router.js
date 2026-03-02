@@ -61,6 +61,9 @@ async function navigate(sectionId) {
   // 2) Re-render icons
   try { window.lucide?.createIcons?.(); } catch (_) {}
 
+  // 2.1) Tablas responsivas (auto: cards en móvil)
+  try { document.querySelectorAll('.table-responsive table').forEach(t=> window.sgfBindResponsiveTable?.(t)); } catch (_) {}
+
   // 3) Hook del módulo (si falla, no "romper" el router)
   try {
     // Asegurar migraciones antes de ejecutar lógica del módulo
