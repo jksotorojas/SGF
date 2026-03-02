@@ -268,6 +268,7 @@ window.SGF.modules = window.SGF.modules || {};
       tbody.innerHTML = (rows.length ? (rows.join('') + footerRow) : '') || `<tr><td class="py-4 px-3 text-slate-500" colspan="5">Sin datos.</td></tr>`;
       labelEl.textContent = rangeLabel;
       try { window.lucide?.createIcons?.(); } catch(_){}
+      try { window.sgfMakeTableCardResponsive?.(tbody?.closest?.('table') || document.getElementById('bvr-table')); } catch(_){}
     }
 
     function compute(){
