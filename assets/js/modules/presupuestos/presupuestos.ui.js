@@ -164,35 +164,84 @@ window.SGF.modalHandlers = window.SGF.modalHandlers || {};
   function computeConsumedForBudget(b, catsAll) {
     // Consumido por periodo y categoría (incluye hijos), usando movements y movement_splits.
     const period = String(b?._effective_period || b?.period || '');
-    if (!period || period === '0000-00') return 0;
+    // Nota: Presupuestos recurrentes se guardan con period='0000-00'.
+    // Si el filtro de periodo está en (Todos), igualmente debemos calcular consumido
+    // contra *todos* los movimientos (por tipo/categoría), en vez de devolver 0.
+    if (!period) return 0;
     const ids = categorySubtreeIds(b.category_id, catsAll);
     if (!ids.length) return 0;
     const inClause = ids.map((_, i) => `:c${i}`).join(',');
-    const params = { ':p': period, ':t': b.type, };
+    const params = { ':t': b.type };
     ids.forEach((id, i) => { params[`:c${i}`] = id; });
 
+    const isAllPeriods = (period === '0000-00');
+
+    // Cuando es "todos los periodos" necesitamos poder convertir por periodo (para USD).
+    function sumBaseByPeriod() {
+      const rows = window.SGF.db.select(
+        `SELECT x.period, COALESCE(SUM(x.base_sum),0) AS base_sum
+         FROM (
+           SELECT m.period AS period,
+                  COALESCE(SUM(s.amount * CASE WHEN m.amount!=0 THEN (m.base_amount / m.amount) ELSE 0 END),0) AS base_sum
+           FROM movements m
+           JOIN movement_splits s ON s.movement_id=m.id
+           WHERE m.type=:t AND m.is_split=1
+             AND s.category_id IN (${inClause})
+           GROUP BY m.period
+           UNION ALL
+           SELECT m.period AS period,
+                  COALESCE(SUM(m.base_amount),0) AS base_sum
+           FROM movements m
+           WHERE m.type=:t AND COALESCE(m.is_split,0)=0
+             AND m.category_id IN (${inClause})
+           GROUP BY m.period
+         ) x
+         GROUP BY x.period`,
+        params
+      );
+      return (rows || []).map(r => ({ period: String(r.period || ''), base_sum: Number(r.base_sum || 0) }));
+    }
+
     // splits
-    const s = window.SGF.db.scalar(
+    const s = !isAllPeriods ? window.SGF.db.scalar(
       `SELECT COALESCE(SUM(s.amount * CASE WHEN m.amount!=0 THEN (m.base_amount / m.amount) ELSE 0 END),0)
        FROM movements m
        JOIN movement_splits s ON s.movement_id=m.id
        WHERE m.period=:p AND m.type=:t AND m.is_split=1
          AND s.category_id IN (${inClause})`,
-      params
-    );
+      { ...params, ':p': period }
+    ) : 0;
     // no-split
-    const n = window.SGF.db.scalar(
+    const n = !isAllPeriods ? window.SGF.db.scalar(
       `SELECT COALESCE(SUM(m.base_amount),0)
        FROM movements m
        WHERE m.period=:p AND m.type=:t AND COALESCE(m.is_split,0)=0
          AND m.category_id IN (${inClause})`,
-      params
-    );
-    const baseSum = Number(s || 0) + Number(n || 0);
+      { ...params, ':p': period }
+    ) : 0;
+    const baseSum = !isAllPeriods ? (Number(s || 0) + Number(n || 0)) : 0;
     const baseCur = window.SGF.fx?.baseCurrency?.() || 'CRC';
     const secCur = window.SGF.fx?.secondaryCurrency?.() || 'USD';
     const budCur = String(b?.currency || baseCur).toUpperCase();
 
+    // Caso: cálculo por todos los periodos (presupuesto recurrente en vista "Todos").
+    if (isAllPeriods) {
+      const byP = sumBaseByPeriod();
+      if (budCur === String(secCur).toUpperCase() && baseCur === 'CRC' && secCur === 'USD') {
+        // Convertir por periodo para evitar usar una sola tasa.
+        return byP.reduce((acc, row) => {
+          const p = row.period;
+          if (!p) return acc;
+          const end = window.SGF.fx?.periodEndDate?.(p) || (p + '-01');
+          const r = window.SGF.fx?.usdToCrc?.(end) || 0;
+          return acc + (r > 0 ? (Number(row.base_sum || 0) / r) : 0);
+        }, 0);
+      }
+      // Moneda base (CRC) u otra sin conversión soportada: sumar base.
+      return byP.reduce((acc, row) => acc + Number(row.base_sum || 0), 0);
+    }
+
+    // Caso: un periodo específico.
     if (budCur === String(secCur).toUpperCase() && baseCur === 'CRC' && secCur === 'USD') {
       const end = window.SGF.fx?.periodEndDate?.(period) || (period + '-01');
       const r = window.SGF.fx?.usdToCrc?.(end) || 0;
