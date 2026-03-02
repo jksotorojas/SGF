@@ -27,7 +27,7 @@ window.SGF.reports.engine = window.SGF.reports.engine || {};
     const month = get('month')?.value || 'all';
     const currency = get('currency')?.value || 'CRC';
     const accountId = Number(get('account')?.value || 0);
-    const type = get('type')?.value || 'expense';
+    const type = get('type')?.value || 'both';
     const order = get('order')?.value || 'desc';
     return { year, month, currency, accountId, type, order };
   }

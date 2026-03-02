@@ -38,7 +38,8 @@ body.theme-dark .border, body.theme-dark .border-b, body.theme-dark .border-gray
   }
   .table-responsive td{
     display:flex;
-    gap:12px;
+    flex-wrap: wrap;            /* permite que montos largos bajen de línea en móvil */
+    gap:8px;
     justify-content: space-between;
     align-items:flex-start;
     padding:10px 12px;
@@ -52,12 +53,13 @@ body.theme-dark .border, body.theme-dark .border-b, body.theme-dark .border-gray
     content: attr(data-label);
     font-weight:700;
     opacity:.75;
-    flex: 0 0 42%;
-    max-width: 42%;
+    flex: 0 0 38%;
+    max-width: 38%;
     text-align:left;
   }
   .table-responsive td > *{
     flex: 1 1 auto;
+    min-width: 0;               /* clave para que no se "corten" valores con flex */
     text-align:right;
   }
 }

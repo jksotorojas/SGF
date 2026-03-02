@@ -211,7 +211,7 @@ window.SGF.modules = window.SGF.modules || {};
       { value:'expense', label:'Gastos' },
       { value:'income', label:'Ingresos' },
       { value:'both', label:'Ambos (Ingresos + Gastos)' },
-    ], saved?.type || 'expense');
+    ], saved?.type || 'both');
 
     // state
     const state = {

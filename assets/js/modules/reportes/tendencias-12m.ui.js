@@ -68,7 +68,7 @@ window.SGF.modules = window.SGF.modules || {};
     const saved = E?.loadFilters ? E.loadFilters(STORE_KEY) : null;
 
     fillSelect(groupEl, [{value:'category',label:'Categoría'},{value:'account',label:'Cuenta'}], saved?.groupBy || 'category');
-    fillSelect(typeEl, [{value:'expense',label:'Gastos'},{value:'income',label:'Ingresos'},{value:'both',label:'Ambos'}], saved?.type || 'expense');
+    fillSelect(typeEl, [{value:'expense',label:'Gastos'},{value:'income',label:'Ingresos'},{value:'both',label:'Ambos'}], saved?.type || 'both');
     fillSelect(curEl, loadCurrencies(), saved?.currency || 'all');
     fillSelect(accEl, loadAccounts(), saved?.accountId ?? 0);
 
