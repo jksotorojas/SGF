@@ -88,3 +88,18 @@ body.theme-dark .border, body.theme-dark .border-b, body.theme-dark .border-gray
   }
 }
 
+
+
+/* v1.337.7 - Sticky first column for wide report tables (e.g., Balance por Cuenta) */
+.sgf-sticky-firstcol { border-collapse: separate; border-spacing: 0; }
+.sgf-sticky-firstcol thead th { position: sticky; top: 0; z-index: 5; background: #f8fafc; }
+.sgf-sticky-firstcol thead th:first-child { left: 0; z-index: 6; }
+.sgf-sticky-firstcol tbody td:first-child,
+.sgf-sticky-firstcol thead th:first-child {
+  position: sticky;
+  left: 0;
+}
+.sgf-sticky-firstcol tbody td:first-child{
+  z-index: 4;
+  background: #ffffff;
+}
