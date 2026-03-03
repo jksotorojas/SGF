@@ -187,13 +187,16 @@ window.SGF.modules = window.SGF.modules || {};
         pn
       );
     } else {
-      // saldo neto global (disponible): ingresos - gastos - depósitos a ahorros + retiros de ahorros
-      // (evita doble-restar retiros; en v1.33.9 se restaban depósitos + retiros)
-      const incC = dbScalar(`SELECT COALESCE(SUM(amount),0) FROM movements ${whereNet} AND type='income'`, pn);
-      const expC = dbScalar(`SELECT COALESCE(SUM(amount),0) FROM movements ${whereNet} AND type='expense'`, pn);
-      const depC = dbScalar(`SELECT COALESCE(SUM(amount),0) FROM movements ${whereNet} AND is_savings=1 AND savings_kind='deposit'`, pn);
-      const witC = dbScalar(`SELECT COALESCE(SUM(amount),0) FROM movements ${whereNet} AND is_savings=1 AND savings_kind='withdraw'`, pn);
-      net = Number(incC || 0) - Number(expC || 0) - Number(depC || 0) + Number(witC || 0);
+      // saldo neto global:
+      // - Si se filtra por un rango (año/mes), mostrar el neto DEL RANGO: ingresos - gastos.
+      // - Si está en "Historial" (Todos), mostrar el neto acumulado al cierre (<= endPeriod): ingresos - gastos.
+      if (year !== 'all' || month !== 'all') {
+        net = Number(income || 0) - Number(expense || 0);
+      } else {
+        const incC = dbScalar(`SELECT COALESCE(SUM(amount),0) FROM movements ${whereNet} AND type='income'`, pn);
+        const expC = dbScalar(`SELECT COALESCE(SUM(amount),0) FROM movements ${whereNet} AND type='expense'`, pn);
+        net = Number(incC || 0) - Number(expC || 0);
+      }
     }
 
     return { income, expense, savings, net, rangeLabel: range.label, endPeriod };
