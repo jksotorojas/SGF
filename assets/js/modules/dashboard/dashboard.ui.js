@@ -143,8 +143,8 @@ window.SGF.modules = window.SGF.modules || {};
 
     const where = w.length ? `WHERE ${w.join(' AND ')}` : '';
 
-    const income = dbScalar(`SELECT COALESCE(SUM(amount),0) FROM movements ${where} AND type='income'`, p);
-    const expense = dbScalar(`SELECT COALESCE(SUM(amount),0) FROM movements ${where} AND type='expense'`, p);
+    const income = dbScalar(`SELECT COALESCE(SUM(amount),0) FROM movements ${where} AND type='income' AND is_opening=0 AND (description IS NULL OR LOWER(description) NOT LIKE '%saldo inicial%')`, p);
+    const expense = dbScalar(`SELECT COALESCE(SUM(amount),0) FROM movements ${where} AND type='expense' AND is_opening=0 AND (description IS NULL OR LOWER(description) NOT LIKE '%saldo inicial%')`, p);
 
     // Ahorros: is_savings=1 y savings_kind
     const dep = dbScalar(`SELECT COALESCE(SUM(amount),0) FROM movements ${where} AND is_savings=1 AND savings_kind='deposit'`, p);
