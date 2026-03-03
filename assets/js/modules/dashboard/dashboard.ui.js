@@ -151,14 +151,16 @@ window.SGF.modules = window.SGF.modules || {};
     const wit = dbScalar(`SELECT COALESCE(SUM(amount),0) FROM movements ${where} AND is_savings=1 AND savings_kind='withdraw'`, p);
     const savings = Number(dep || 0) - Number(wit || 0);
 
-    // Saldo neto: al cierre del endPeriod
+    // Saldo neto: al cierre del endPeriod (<= end)
     const endPeriod = getEndPeriod({ year, month, currency, accountId });
     const wn = [];
     const pn = { ':cur': currency, ':end': endPeriod };
 
-    // cuenta (saldo) y period <= end
+    // cierre por moneda y hasta el periodo final
     wn.push(`currency = :cur`);
     wn.push(`period <= :end`);
+
+    // si filtra por cuenta: calcular el saldo de ESA cuenta (incluye transferencias IN/OUT)
     if (Number(accountId) > 0) {
       wn.push(`(account_id = :aid OR account_to_id = :aid)`);
       pn[':aid'] = Number(accountId);
@@ -166,20 +168,33 @@ window.SGF.modules = window.SGF.modules || {};
 
     const whereNet = `WHERE ${wn.join(' AND ')}`;
 
-    const net = dbScalar(
-      `SELECT COALESCE(SUM(
-        CASE
-          WHEN type='income' AND account_id IS NOT NULL THEN amount
-          WHEN type='expense' AND account_id IS NOT NULL THEN -amount
-          WHEN type='transfer' AND account_id IS NOT NULL THEN -amount
-          WHEN type='transfer' AND account_to_id IS NOT NULL THEN COALESCE(amount_to, amount)
-          ELSE 0
-        END
-      ),0) AS net
-      FROM movements
-      ${whereNet}`,
-      pn
-    );
+    let net = 0;
+
+    if (Number(accountId) > 0) {
+      // saldo/cierre por cuenta
+      net = dbScalar(
+        `SELECT COALESCE(SUM(
+          CASE
+            WHEN type='income' AND account_id = :aid THEN amount
+            WHEN type='expense' AND account_id = :aid THEN -amount
+            WHEN type='transfer' AND account_id = :aid THEN -amount
+            WHEN type='transfer' AND account_to_id = :aid THEN COALESCE(amount_to, amount)
+            ELSE 0
+          END
+        ),0) AS net
+        FROM movements
+        ${whereNet}`,
+        pn
+      );
+    } else {
+      // saldo neto global (disponible): ingresos - gastos - depósitos a ahorros + retiros de ahorros
+      // (evita doble-restar retiros; en v1.33.9 se restaban depósitos + retiros)
+      const incC = dbScalar(`SELECT COALESCE(SUM(amount),0) FROM movements ${whereNet} AND type='income'`, pn);
+      const expC = dbScalar(`SELECT COALESCE(SUM(amount),0) FROM movements ${whereNet} AND type='expense'`, pn);
+      const depC = dbScalar(`SELECT COALESCE(SUM(amount),0) FROM movements ${whereNet} AND is_savings=1 AND savings_kind='deposit'`, pn);
+      const witC = dbScalar(`SELECT COALESCE(SUM(amount),0) FROM movements ${whereNet} AND is_savings=1 AND savings_kind='withdraw'`, pn);
+      net = Number(incC || 0) - Number(expC || 0) - Number(depC || 0) + Number(witC || 0);
+    }
 
     return { income, expense, savings, net, rangeLabel: range.label, endPeriod };
   }
