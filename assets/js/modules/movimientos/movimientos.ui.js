@@ -910,11 +910,16 @@ return {
              <i data-lucide="trash" class="w-4 h-4"></i>
            </button>`;
 
+      const copyBtn = `<button type="button" class="text-slate-600 hover:bg-slate-50 p-1 rounded" data-action="mov-copy" data-id="${r.id}" title="Copiar">
+             <i data-lucide="copy" class="w-4 h-4"></i>
+           </button>`;
+
       return `
         <tr class="border-b hover:bg-gray-50 ${isLocked ? 'bg-gray-50/60' : ''}">
           <td class="p-3">
             <div class="flex gap-1">
               ${editBtn}
+              ${copyBtn}
               ${delBtn}
             </div>
           </td>
@@ -1332,6 +1337,89 @@ return {
           setAmountReadonly(false);
         }
       }
+    } else if (ctx?.copyFromId) {
+      // Copy mode: duplicar como nuevo movimiento (por defecto con fecha/periodo de hoy)
+      const srcId = Number(ctx.copyFromId || 0);
+      const m = srcId ? fetchMovement(srcId) : null;
+      if (m) {
+        // titulo
+        const titleEl = document.getElementById('modal-title');
+        if (titleEl) titleEl.textContent = 'Copiar Movimiento';
+
+        // Por UX: al copiar, usar fecha/periodo de hoy (evita meses cerrados)
+        const isoToday = todayISO();
+        const pToday = isoToPeriod(isoToday);
+
+        typeSel.value = TYPE_MAP_DB_TO_UI[m.type] || 'Gasto';
+        if (dateEl) dateEl.value = isoToCR(isoToday);
+        if (periodEl) {
+          fillPeriodSelect(periodEl, pToday);
+          periodEl.value = pToday;
+        }
+
+        if (amountEl) amountEl.value = Number(m.amount || 0).toFixed(2);
+        document.getElementById('mov-desc').value = m.description || '';
+        document.getElementById('mov-ref').value = m.reference_url || '';
+        document.getElementById('mov-att').value = m.attachments_text || '';
+
+        accSel.value = String(m.account_id || '');
+        syncDest();
+        if (toSel) toSel.value = m.account_to_id ? String(m.account_to_id) : '';
+
+        if (Number(m.is_split || 0) === 1) {
+          // activar split
+          const splitBox = document.getElementById('mov-split-box');
+          const splitRows = document.getElementById('mov-split-rows');
+          const splitToggle = document.getElementById('mov-split-toggle');
+          if (splitBox?.classList.contains('hidden')) splitToggle?.click();
+          const splits = fetchSplits(srcId);
+          if (splitRows) splitRows.innerHTML = '';
+          splits.forEach(s => {
+            const tr = (function createSplitRow(){
+              if (!splitRows) return null;
+              const tr = document.createElement('tr');
+              tr.className = 'border-b';
+              tr.innerHTML = `
+                <td class="p-2">
+                  <select class="mov-split-cat w-full p-2 border rounded-lg text-sm"></select>
+                </td>
+                <td class="p-2">
+                  <input type="number" step="0.01" class="mov-split-amt w-full p-2 border rounded-lg text-sm" placeholder="0.00" />
+                </td>
+                <td class="p-2">
+                  <button type="button" class="mov-split-del text-red-600 hover:bg-red-50 p-1 rounded" title="Eliminar fila">
+                    <i data-lucide="trash" class="w-4 h-4"></i>
+                  </button>
+                </td>
+              `;
+              tr.querySelector('.mov-split-del')?.addEventListener('click', () => {
+                tr.remove();
+                recomputeAmountFromSplit();
+              });
+              splitRows.appendChild(tr);
+              window.lucide?.createIcons?.();
+              return tr;
+            })();
+            if (!tr) return;
+            const sel = tr.querySelector('.mov-split-cat');
+            if (sel) sel.innerHTML = catPathList.map(c => `<option value="${c.id}">${c.path}</option>`).join('');
+            const sel2 = tr.querySelector('.mov-split-cat');
+            const amt2 = tr.querySelector('.mov-split-amt');
+            if (sel2) sel2.value = String(s.category_id);
+            if (amt2) amt2.value = Number(s.amount || 0).toFixed(2);
+          });
+          setAmountReadonly(true);
+          recomputeAmountFromSplit();
+        } else {
+          // categoría simple
+          catSel.innerHTML = `<option value="">(Opcional)</option>` + catPathList.map(c => `<option value="${c.id}">${c.path}</option>`).join('');
+          catSel.value = m.category_id ? String(m.category_id) : '';
+          setAmountReadonly(false);
+        }
+      } else {
+        // defaults
+        catSel.innerHTML = `<option value="">(Opcional)</option>` + catPathList.map(c => `<option value="${c.id}">${c.path}</option>`).join('');
+      }
     } else {
       // defaults
       catSel.innerHTML = `<option value="">(Opcional)</option>` + catPathList.map(c => `<option value="${c.id}">${c.path}</option>`).join('');
@@ -1381,6 +1469,10 @@ return {
       if (action === 'mov-edit') {
         const id = Number(btn.getAttribute('data-id'));
         openModal('mov_new', { movementId: id });
+      }
+      if (action === 'mov-copy') {
+        const id = Number(btn.getAttribute('data-id'));
+        openModal('mov_new', { copyFromId: id });
       }
       if (action === 'mov-del') {
         const id = Number(btn.getAttribute('data-id'));

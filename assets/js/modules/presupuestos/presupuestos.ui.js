@@ -300,8 +300,9 @@ window.SGF.modalHandlers = window.SGF.modalHandlers || {};
         <tr class="border-b hover:bg-gray-50">
           <td class="p-3">
             <div class="flex gap-1">
-              <button type="button" class="text-blue-600 hover:bg-blue-50 p-1 rounded" data-action="bud-edit" data-id="${r.id}"><i data-lucide="edit" class="w-4 h-4"></i></button>
-              ${r._is_fallback ? '' : `<button type="button" class="text-red-600 hover:bg-red-50 p-1 rounded" data-action="bud-del" data-id="${r.id}"><i data-lucide="trash" class="w-4 h-4"></i></button>`}
+              <button type="button" class="text-blue-600 hover:bg-blue-50 p-1 rounded" data-action="bud-edit" data-id="${r.id}" title="Editar"><i data-lucide="edit" class="w-4 h-4"></i></button>
+              ${r._is_fallback ? '' : `<button type="button" class="text-slate-600 hover:bg-slate-50 p-1 rounded" data-action="bud-copy" data-id="${r.id}" title="Copiar"><i data-lucide="copy" class="w-4 h-4"></i></button>`}
+              ${r._is_fallback ? '' : `<button type="button" class="text-red-600 hover:bg-red-50 p-1 rounded" data-action="bud-del" data-id="${r.id}" title="Eliminar"><i data-lucide="trash" class="w-4 h-4"></i></button>`}
             </div>
           </td>
           <td class="p-3 text-xs text-gray-400">#${r.id}</td>
@@ -380,12 +381,13 @@ window.SGF.modalHandlers = window.SGF.modalHandlers || {};
     if (!document._sgfBudDelegation) {
       document._sgfBudDelegation = true;
       document.addEventListener('click', (ev) => {
-        const btn = ev.target?.closest?.('[data-action="bud-edit"],[data-action="bud-del"]');
+        const btn = ev.target?.closest?.('[data-action="bud-edit"],[data-action="bud-copy"],[data-action="bud-del"]');
         if (!btn) return;
         const action = btn.getAttribute('data-action');
         const id = Number(btn.getAttribute('data-id') || 0);
         if (!id) return;
         if (action === 'bud-edit') return openModal('bud_new', { id });
+        if (action === 'bud-copy') return openModal('bud_new', { copyFromId: id });
         if (action === 'bud-del') return deleteBudget(id);
       }, true);
     }
@@ -476,6 +478,36 @@ window.SGF.modalHandlers = window.SGF.modalHandlers || {};
 
     const ctx = window.SGF.modalContext || {};
     const id = Number(ctx.id || 0);
+    const copyFromId = !id ? Number(ctx.copyFromId || 0) : 0;
+    if (copyFromId) {
+      const b = window.SGF.db.select('SELECT * FROM budgets WHERE id=:id', { ':id': copyFromId })?.[0];
+      if (b) {
+        // limpiar id => nuevo registro
+        document.getElementById('bud-id').value = '';
+
+        // si es recurrente, mantener recurrente; si no, mantener su periodo
+        const isRec = (b.period === '0000-00' || Number(b.is_recurring) === 1);
+        document.getElementById('bud-rec').checked = !!isRec;
+
+        if (!isRec) {
+          if (b.period && b.period !== '0000-00') periodSel.value = b.period;
+        } else {
+          // recurrente: por UX dejar periodo actual en el combo
+          const now = new Date();
+          const p = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}`;
+          periodSel.value = p;
+        }
+
+        document.getElementById('bud-type').value = b.type;
+        document.getElementById('bud-cat').value = String(b.category_id);
+        document.getElementById('bud-cur').value = b.currency;
+        document.getElementById('bud-amount').value = Number(b.amount || 0).toFixed(2);
+        document.getElementById('bud-active').checked = Number(b.active) === 1;
+
+        document.getElementById('modal-title').textContent = 'Copiar Presupuesto';
+        return;
+      }
+    }
     if (id) {
       const b = window.SGF.db.select('SELECT * FROM budgets WHERE id=:id', { ':id': id })?.[0];
       if (b) {

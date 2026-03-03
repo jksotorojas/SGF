@@ -328,6 +328,9 @@ function nowIso() {
               <button class="text-blue-600 hover:bg-blue-50 p-1 rounded" onclick="window.SGF.modules.ahorros.openSavingsEdit(${Number(r.id)})" title="Editar">
                 <i data-lucide="edit" class="w-4 h-4"></i>
               </button>
+              <button class="text-slate-600 hover:bg-slate-50 p-1 rounded" onclick="window.SGF.modules.ahorros.openSavingsCopy(${Number(r.id)})" title="Copiar">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+              </button>
               ${showWithdraw ? `
               <button class="text-amber-600 hover:bg-amber-50 p-1 rounded" onclick="window.SGF.modules.ahorros.openSavingsWithdraw(${Number(r.id)})" title="Retirar">
                 <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
@@ -621,8 +624,9 @@ if (kindEl.dataset.bound === '1') return true;
       }
     }
 
-    // Defaults + edición
+    // Defaults + edición / copia
     const editId = Number(ctx?.id || 0);
+    const copyFromId = !editId ? Number(ctx?.copyFromId || 0) : 0;
     if (idHidden) idHidden.value = editId ? String(editId) : '';
 
     // valores iniciales
@@ -630,7 +634,31 @@ if (kindEl.dataset.bound === '1') return true;
 
     refreshDepositRefs();
 
-    if (editId) {
+    if (copyFromId) {
+      const m = window.SGF.db.select('SELECT * FROM movements WHERE id=:id LIMIT 1', { ':id': copyFromId })[0];
+      if (m) {
+        // Copia como nuevo: por UX usamos fecha/periodo de hoy
+        if (idHidden) idHidden.value = '';
+        kindEl.value = String(m.savings_kind || 'deposit');
+        if (dateEl) dateEl.value = (fmt.todayCR ? fmt.todayCR() : isoToCR(todayISO()));
+        if (periodEl) periodEl.value = isoToPeriod(todayISO());
+        if (amountEl) amountEl.value = Number(m.amount || 0).toFixed(2);
+        if (descEl) descEl.value = m.description || '';
+        if (catEl) catEl.value = m.category_id ? String(m.category_id) : '';
+        if (goalEl) goalEl.value = m.goal_id ? String(m.goal_id) : '';
+
+        if (String(m.savings_kind) === 'deposit') {
+          fromEl.value = String(m.account_id || '');
+        } else {
+          // retiro: copiar destino, pero SIN amarrar referencia de depósito
+          if (refEl) refEl.value = '';
+          if (toEl) toEl.value = m.account_to_id ? String(m.account_to_id) : '';
+        }
+
+        const titleEl = document.getElementById('modal-title');
+        if (titleEl) titleEl.textContent = 'Copiar Ahorro';
+      }
+    } else     if (editId) {
       const m = window.SGF.db.select('SELECT * FROM movements WHERE id=:id LIMIT 1', { ':id': editId })[0];
       if (m) {
         kindEl.value = String(m.savings_kind || 'deposit');
@@ -1012,6 +1040,10 @@ window.SGF.db.run(
     openModal('sav_new', { id: Number(id) });
   }
 
+  function openSavingsCopy(id) {
+    openModal('sav_new', { copyFromId: Number(id) });
+  }
+
   function openSavingsWithdraw(depositId) {
     openModal('sav_new', { kind: 'withdraw', refDepositId: Number(depositId) });
   }
@@ -1080,6 +1112,7 @@ window.SGF.db.run(
     setupSavingsModalDynamic,
     setupGoalsModalDynamic,
     openSavingsEdit,
+    openSavingsCopy,
     openSavingsWithdraw,
     deleteSavings,
     editGoal,
